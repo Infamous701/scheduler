@@ -206,20 +206,38 @@
                 <!-- User rows -->
                 @for (sched of filteredSchedule(); track sched.user.id) {
                   <div class="tl-user-row">
-                    @for (day of sched.days; track day.date.getTime()) {
+                    @for (day of sched.days; track day.date.getTime(); let di = $index) {
                       <div class="day-seg"
                         [class.is-today]="day.isToday"
                         [class.is-weekend]="day.isWeekend">
                         @if (day.isToday) {
                           <div class="now-line" [style.left.%]="nowPct()" [matTooltip]="nowTime()" matTooltipPosition="above"></div>
                         }
+                        @if (di === 0 && day.prevShift !== 'off' && shiftOverflowsMidnight(day.prevShift, day.prevShiftOvertime)) {
+                          <div class="shift-block shift-cont"
+                            [ngClass]="getShiftDef(day.prevShift).cssClass"
+                            [style.left.%]="0"
+                            [style.width.%]="shiftContinuationWidthPct(day.prevShift, day.prevShiftOvertime)"
+                            [style.z-index]="4"
+                            [matTooltip]="shiftTooltip(sched.user.name, day.prevShift, day.prevShiftOvertime)">
+                            <span class="sb-label">{{ getShiftDef(day.prevShift).label }}</span>
+                          </div>
+                        }
+                        @if (di === 0 && day.prevOoo && oooOverflowsMidnight(day.prevOoo) && (day.prevShift === 'day' || day.prevShift === 'night')) {
+                          <div class="ooo-block ooo-cont"
+                            [style.left.%]="0"
+                            [style.width.%]="oooContinuationWidthPct(day.prevOoo)"
+                            [matTooltip]="sched.user.name + '  OOO (' + oooTime(day.prevOoo.start) + ' – ' + oooTime(day.prevOoo.end) + ')'">
+                          </div>
+                        }
                         @if (day.shift !== 'off') {
                           <div class="shift-block"
                             [ngClass]="getShiftDef(day.shift).cssClass"
                             [class.all-day]="getShiftDef(day.shift).allDay"
+                            [class.shift-truncated]="shiftOverflowsMidnight(day.shift, day.isOvertime) && day.isLastDay"
                             [style.left.%]="shiftLeftPct(day.shift)"
-                            [style.width.%]="shiftWidthPct(day.shift, day.isOvertime)"
-                            [style.z-index]="day.shift === 'night' ? 4 : 1"
+                            [style.width.%]="shiftOverflowsMidnight(day.shift, day.isOvertime) && day.isLastDay ? shiftTruncatedWidthPct(day.shift) : shiftWidthPct(day.shift, day.isOvertime)"
+                            [style.z-index]="shiftOverflowsMidnight(day.shift, day.isOvertime) ? 4 : 1"
                             [matTooltip]="shiftTooltip(sched.user.name, day.shift, day.isOvertime)">
                             <span class="sb-label">{{ getShiftDef(day.shift).label }}</span>
                             @if (day.isOvertime && day.shift !== 'pto' && day.shift !== 'holiday') {
@@ -230,6 +248,14 @@
                               </span>
                             }
                           </div>
+                          @if (day.ooo && (day.shift === 'day' || day.shift === 'night')) {
+                            <div class="ooo-block"
+                              [class.shift-truncated]="oooOverflowsMidnight(day.ooo) && day.isLastDay"
+                              [style.left.%]="(day.ooo.start / 24) * 100"
+                              [style.width.%]="oooOverflowsMidnight(day.ooo) && day.isLastDay ? oooTruncatedWidthPct(day.ooo) : ((day.ooo.end - day.ooo.start + 24) % 24) / 24 * 100"
+                              [matTooltip]="sched.user.name + '  OOO (' + oooTime(day.ooo.start) + ' – ' + oooTime(day.ooo.end) + ')'">
+                            </div>
+                          }
                         }
                       </div>
                     }
@@ -265,6 +291,10 @@
             <div class="legend-item ot-note">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
               <span style="color:#8a92a6">= Overtime</span>
+            </div>
+            <div class="legend-item ot-note">
+              <div class="swatch swatch-ooo"></div>
+              <span style="color:#8a92a6">= OOO</span>
             </div>
           </div>
           <span><mat-icon>view_week</mat-icon> Week {{ weekNum() }}</span>

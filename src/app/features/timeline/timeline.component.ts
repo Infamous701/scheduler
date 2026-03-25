@@ -232,6 +232,43 @@ export class TimelineComponent implements OnDestroy {
     return `${name}  (${fmt(def.start)} – ${endStr})`;
   }
 
+  oooTime(h: number): string {
+    return `${String(h % 24).padStart(2, '0')}:00`;
+  }
+
+  // Checks if a shift overflows past midnight
+  shiftOverflowsMidnight(shift: ShiftType, overtime = false): boolean {
+    const def = SHIFT_DEFS[shift];
+    if (def.allDay || shift === 'off') return false;
+    const end = overtime ? def.overtimeEnd : def.end;
+    return end < def.start; // end < start means it crosses midnight
+  }
+
+  // Width of the truncated part (start → midnight) on the last day
+  shiftTruncatedWidthPct(shift: ShiftType): number {
+    return ((24 - SHIFT_DEFS[shift].start) / 24) * 100;
+  }
+
+  // Width of the continuation part (midnight → end) on the next day
+  shiftContinuationWidthPct(shift: ShiftType, overtime = false): number {
+    const def = SHIFT_DEFS[shift];
+    const end = overtime ? def.overtimeEnd : def.end;
+    return (end / 24) * 100;
+  }
+
+  // OOO overflow helpers
+  oooOverflowsMidnight(ooo: { start: number; end: number }): boolean {
+    return ooo.end < ooo.start;
+  }
+
+  oooTruncatedWidthPct(ooo: { start: number; end: number }): number {
+    return ((24 - ooo.start) / 24) * 100;
+  }
+
+  oooContinuationWidthPct(ooo: { start: number; end: number }): number {
+    return (ooo.end / 24) * 100;
+  }
+
   shiftLeftPct(shift: ShiftType): number {
     if (SHIFT_DEFS[shift].allDay) return 0;
     return (SHIFT_DEFS[shift].start / 24) * 100;

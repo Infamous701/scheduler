@@ -49,13 +49,22 @@ export interface User {
   color: string;
 }
 
+export interface OooBlock {
+  start: number; // hour (fractional ok)
+  end: number;
+}
+
 export interface DaySchedule {
   date: Date;
   shift: ShiftType;
   prevShift: ShiftType;
+  prevShiftOvertime: boolean;
+  prevOoo: OooBlock | null;
   isOvertime: boolean;
   isToday: boolean;
   isWeekend: boolean;
+  isLastDay: boolean;
+  ooo: OooBlock | null;
 }
 
 export interface UserSchedule {

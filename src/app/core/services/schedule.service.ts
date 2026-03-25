@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import {
-  SchedUser, User, ShiftType, SHIFT_TYPES, UserSchedule,
-  GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, AVATAR_COLORS, MANAGER_DATA
+  SchedUser, User, ShiftType, SHIFT_TYPES, UserSchedule, OooBlock,
+  GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, AVATAR_COLORS, MANAGER_DATA, SHIFT_DEFS
 } from '../models/scheduler.models';
 
 const STORAGE_KEY = 'sched_users';
@@ -68,22 +68,57 @@ export class ScheduleService {
     return ((s * 1664525 + 1013904223) & 0x7fffffff) % 4 === 0;
   }
 
+  getOoo(uid: number, date: Date, shift: ShiftType): OooBlock | null {
+    // OOO only applies within day and night shifts
+    if (shift !== 'day' && shift !== 'night') return null;
+    const def = SHIFT_DEFS[shift];
+    const s = uid * 97 + date.getFullYear() * 200 + date.getMonth() * 60 + date.getDate() * 13;
+    // ~25% chance of OOO
+    if (((s * 1664525 + 1013904223) & 0x7fffffff) % 4 !== 0) return null;
+    // Work in linear hours to avoid midnight wraparound (night: 21–29)
+    const shiftEndLinear = shift === 'night' ? def.end + 24 : def.end;
+    // Duration: 1h, 2h, 3h or 4h (weighted — 3h and 4h are less frequent)
+    const durRoll = ((s * 22695477 + 12345) & 0x7fffffff) % 8;
+    const duration = durRoll < 3 ? 1 : durRoll < 6 ? 2 : durRoll < 7 ? 3 : 4;
+    // OOO must fit inside the shift with at least 1h buffer on each side
+    const minOooStart = def.start + 1;
+    const maxOooStart = shiftEndLinear - duration - 1;
+    if (maxOooStart <= minOooStart) return null;
+    const range = maxOooStart - minOooStart;
+    const oooStartLinear = minOooStart + (((s * 22695477 + 1) & 0x7fffffff) % range);
+    const oooEndLinear   = oooStartLinear + duration;
+    // Convert back to clock hours (0–23)
+    return { start: oooStartLinear % 24, end: oooEndLinear % 24 };
+  }
+
   // ── Build schedule for a week ────────────────────────────────────
   buildSchedule(users: SchedUser[], offset: number): UserSchedule[] {
     const monday = this.getMonday(offset);
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const days = Array.from({ length: 7 }, (_, i) => this.addDays(monday, i));
 
+    const prevSunday = this.addDays(monday, -1);
     return users.map(u => ({
       user: u,
-      days: days.map((date, i) => ({
-        date,
-        shift: this.getShift(u.id, date),
-        prevShift: i > 0 ? this.getShift(u.id, days[i - 1]) : 'off' as const,
-        isOvertime: this.getIsOvertime(u.id, date),
-        isToday: date.getTime() === today.getTime(),
-        isWeekend: date.getDay() === 0 || date.getDay() === 6,
-      }))
+      days: days.map((date, i) => {
+        const shift = this.getShift(u.id, date);
+        const prevDate = i > 0 ? days[i - 1] : prevSunday;
+        const prevShift = this.getShift(u.id, prevDate);
+        const prevShiftOvertime = this.getIsOvertime(u.id, prevDate);
+        const prevOoo = this.getOoo(u.id, prevDate, prevShift);
+        return {
+          date,
+          shift,
+          prevShift,
+          prevShiftOvertime,
+          prevOoo,
+          isOvertime: this.getIsOvertime(u.id, date),
+          isToday: date.getTime() === today.getTime(),
+          isWeekend: date.getDay() === 0 || date.getDay() === 6,
+          isLastDay: i === days.length - 1,
+          ooo: this.getOoo(u.id, date, shift),
+        };
+      })
     }));
   }
 

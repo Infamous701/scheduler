@@ -161,6 +161,31 @@ mat-sidenav {
   &.is-weekend { background: #fafbfc; }
 }
 
+.ooo-cont {
+  border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important;
+}
+
+.ooo-block {
+  position: absolute; top: 6px; bottom: 6px; border-radius: 3px;
+  background: repeating-linear-gradient(
+    45deg, #78716c, #78716c 3px, #a8a29e 3px, #a8a29e 6px
+  );
+  border: 1px solid #57534e;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; z-index: 5; cursor: default;
+  .ooo-label {
+    font-size: 11px; font-weight: 700; color: #fff; letter-spacing: 1px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.4);
+  }
+}
+
+.swatch-ooo {
+  width: 16px; height: 14px; border-radius: 3px; border: 1px solid #57534e;
+  background: repeating-linear-gradient(
+    45deg, #78716c, #78716c 3px, #a8a29e 3px, #a8a29e 6px
+  );
+}
+
 .now-line {
   position: absolute; top: 0; bottom: 0; width: 2px;
   background: #ff6d00; z-index: 10;
@@ -171,6 +196,13 @@ mat-sidenav {
 
 .shift-block {
   position: absolute; top: 6px; bottom: 6px; border-radius: 4px;
+  &.shift-truncated {
+    border-top-right-radius: 0; border-bottom-right-radius: 0;
+    border-right: 2px dashed rgba(0,0,0,0.3);
+  }
+  &.shift-cont {
+    border-top-left-radius: 0; border-bottom-left-radius: 0;
+  }
   display: flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 12px; font-weight: 700; padding: 0 3px;
   transition: top .1s, bottom .1s, box-shadow .15s;

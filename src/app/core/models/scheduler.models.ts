@@ -65,11 +65,35 @@ export interface TimelineFilters {
   name: string;
   id: string;
   group: string;
-  site: string;
+  location: string;
   model: string;
   role: string;
   shift: string;
 }
+
+export interface FilterChip {
+  key: string;
+  label: string;
+  value: string;
+}
+
+export interface Manager {
+  name: string;
+  color: string;
+  email: string;
+  phone: string;
+  slack: string;
+  location: string;
+  group: string;
+}
+
+export const MANAGER_DATA: Manager[] = [
+  { name: 'Alice Johnson', color: '#1565C0', email: 'alice.johnson@company.com', phone: '+1 212 555 0110', slack: '@alice.johnson', location: 'New York',      group: 'Engineering' },
+  { name: 'Bob Chen',      color: '#6A1B9A', email: 'bob.chen@company.com',      phone: '+1 415 555 0122', slack: '@bob.chen',      location: 'San Francisco', group: 'Product'     },
+  { name: 'Carol Davis',   color: '#B71C1C', email: 'carol.davis@company.com',   phone: '+44 20 7946 0133',slack: '@carol.davis',   location: 'London',        group: 'Design'      },
+  { name: 'David Kim',     color: '#00695C', email: 'david.kim@company.com',     phone: '+49 30 12340044', slack: '@david.kim',     location: 'Berlin',        group: 'QA'          },
+  { name: 'Eve Müller',    color: '#AD1457', email: 'eve.muller@company.com',    phone: '+49 30 12340055', slack: '@eve.muller',    location: 'Berlin',        group: 'Management'  },
+];
 
 export interface UserFilters {
   name: string;

@@ -68,8 +68,6 @@ export class UserDetailComponent implements OnInit {
         this.userId  = id;
         this.form.set({ ...user });
       }
-    } else {
-      this.form.update(f => ({ ...f, id: this.svc.nextUserId() }));
     }
   }
 
@@ -79,16 +77,20 @@ export class UserDetailComponent implements OnInit {
 
   save(): void {
     const f = this.form();
-    if (!f.name?.trim())  { this.snack.open('Name is required', 'OK', { duration: 3000 }); return; }
-    if (!f.email?.trim()) { this.snack.open('Email is required', 'OK', { duration: 3000 }); return; }
-    if (!f.group)         { this.snack.open('Group is required', 'OK', { duration: 3000 }); return; }
-    if (!f.role)          { this.snack.open('Role is required',  'OK', { duration: 3000 }); return; }
+    if (!f.name?.trim())  { this.snack.open('Name is required',         'OK', { duration: 3000 }); return; }
+    if (!f.email?.trim()) { this.snack.open('Email is required',        'OK', { duration: 3000 }); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email ?? '')) {
+                            this.snack.open('Invalid email format',     'OK', { duration: 3000 }); return; }
+    if (!f.group)         { this.snack.open('Group is required',        'OK', { duration: 3000 }); return; }
+    if (!f.role)          { this.snack.open('Role is required',         'OK', { duration: 3000 }); return; }
+    if (!f.location)      { this.snack.open('Location is required',     'OK', { duration: 3000 }); return; }
+    if (!f.model)         { this.snack.open('Work model is required',   'OK', { duration: 3000 }); return; }
 
     if (this.isNew) {
       this.svc.addUser(f as Omit<User, 'id' | 'color'>);
       this.snack.open('User added successfully', 'OK', { duration: 2500 });
-    } else {
-      this.svc.updateUser(this.userId!, f);
+    } else if (this.userId !== null) {
+      this.svc.updateUser(this.userId, f);
       this.snack.open('Changes saved', 'OK', { duration: 2500 });
     }
     this.router.navigate(['/users']);

@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { ScheduleService } from '../../../core/services/schedule.service';
+import { initials } from '../../../core/utils/user.utils';
 
 export interface ContactInfo {
   name: string;
@@ -107,8 +107,6 @@ export class ContactCardComponent implements OnChanges {
   x = 0;
   y = 0;
 
-  constructor(private svc: ScheduleService) {}
-
   ngOnChanges(): void {
     if (this.visible && this.anchorRect) {
       this.position(this.anchorRect);
@@ -128,7 +126,5 @@ export class ContactCardComponent implements OnChanges {
     this.y = top;
   }
 
-  initials(name: string): string {
-    return this.svc.initials(name);
-  }
+  initials = initials;
 }

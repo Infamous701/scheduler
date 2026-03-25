@@ -1,8 +1,10 @@
 import { Injectable, signal } from '@angular/core';
 import {
-  SchedUser, User, ShiftType, SHIFT_TYPES, DaySchedule, UserSchedule,
+  SchedUser, User, ShiftType, SHIFT_TYPES, UserSchedule,
   GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, AVATAR_COLORS
 } from '../models/scheduler.models';
+
+const STORAGE_KEY = 'sched_users';
 
 @Injectable({ providedIn: 'root' })
 export class ScheduleService {
@@ -19,8 +21,8 @@ export class ScheduleService {
     { id:8, name:'Tyler Brooks',   role:'UX Designer',   color:'#2E7D32', group:'Design',       site:'San Francisco', model:'Contract',  email:'tyler.brooks@company.com',   phone:'+1 415 555 0198', slack:'@tyler.brooks'   },
   ];
 
-  // ── All users (generated) ────────────────────────────────────────
-  private _allUsers = signal<User[]>(this.generateUsers(120));
+  // ── All users (generated, persisted to localStorage) ────────────
+  private _allUsers = signal<User[]>(this.loadUsers());
   readonly allUsers = this._allUsers.asReadonly();
 
   // ── Week offset ──────────────────────────────────────────────────
@@ -31,8 +33,8 @@ export class ScheduleService {
   changeWeek(delta: number): void { this._weekOffset.update(v => v + delta); }
 
   // ── Date helpers ─────────────────────────────────────────────────
-  getMonday(offset: number): Date {
-    const d = new Date();
+  getMonday(offset: number, base = new Date()): Date {
+    const d = new Date(base);
     const dow = d.getDay() || 7;
     d.setDate(d.getDate() - dow + 1 + offset * 7);
     d.setHours(0, 0, 0, 0);
@@ -53,10 +55,6 @@ export class ScheduleService {
   weekNum(d: Date): number {
     const jan = new Date(d.getFullYear(), 0, 1);
     return Math.ceil((((d.getTime() - jan.getTime()) / 864e5) + jan.getDay() + 1) / 7);
-  }
-
-  initials(name: string): string {
-    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
   }
 
   // ── Shift logic ──────────────────────────────────────────────────
@@ -93,21 +91,72 @@ export class ScheduleService {
     return this._allUsers().find(u => u.id === id);
   }
 
-  addUser(u: Omit<User, 'id' | 'color'>): void {
+  getUserByName(name: string): User | undefined {
+    return this._allUsers().find(u => u.name === name);
+  }
+
+  addUser(u: Omit<User, 'id' | 'color'>): User {
     const users = this._allUsers();
-    const newId = `U-${String(users.length + 1).padStart(3, '0')}`;
+    const nextNum = users.length === 0 ? 1 : Math.max(...users.map(u => parseInt(u.id.replace('U-', ''), 10))) + 1;
+    const newId = `U-${String(nextNum).padStart(3, '0')}`;
     const color = AVATAR_COLORS[users.length % AVATAR_COLORS.length];
-    this._allUsers.update(list => [...list, { ...u, id: newId, color }]);
+    const newUser: User = { ...u, id: newId, color };
+    this._allUsers.update(list => [...list, newUser]);
+    this.persistUsers();
+    return newUser;
   }
 
   updateUser(id: string, changes: Partial<User>): void {
     this._allUsers.update(list =>
       list.map(u => u.id === id ? { ...u, ...changes } : u)
     );
+    this.persistUsers();
   }
 
-  nextUserId(): string {
-    return `U-${String(this._allUsers().length + 1).padStart(3, '0')}`;
+  deleteUser(id: string): void {
+    this._allUsers.update(list => list.filter(u => u.id !== id));
+    this.persistUsers();
+  }
+
+  resetToDefaults(): void {
+    localStorage.removeItem(STORAGE_KEY);
+    this._allUsers.set(this.generateUsers(120));
+  }
+
+  // ── Persistence ──────────────────────────────────────────────────
+  private loadUsers(): User[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(u => this.migrateUser(u as Record<string, unknown>));
+        }
+      }
+    } catch {
+      // corrupted storage — fall through to fresh generation
+    }
+    return this.generateUsers(120);
+  }
+
+  private persistUsers(): void {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this._allUsers()));
+  }
+
+  private migrateUser(raw: Record<string, unknown>): User {
+    return {
+      id:       String(raw['id']       ?? ''),
+      name:     String(raw['name']     ?? ''),
+      email:    String(raw['email']    ?? ''),
+      phone:    String(raw['phone']    ?? ''),
+      slack:    String(raw['slack']    ?? ''),
+      group:    String(raw['group']    ?? ''),
+      location: String(raw['location'] ?? ''),
+      model:    String(raw['model']    ?? ''),
+      role:     String(raw['role']     ?? ''),
+      manager:  String(raw['manager']  ?? ''),
+      color:    String(raw['color']    ?? AVATAR_COLORS[0]),
+    };
   }
 
   // ── User generation ──────────────────────────────────────────────

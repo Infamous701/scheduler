@@ -17,7 +17,8 @@ import { MatChipsModule } from '@angular/material/chips';
 
 import { ScheduleService } from '../../core/services/schedule.service';
 import { ContactCardComponent, ContactInfo } from '../../shared/components/contact-card/contact-card.component';
-import { User, UserFilters, GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, ROLE_COLORS, AVATAR_COLORS } from '../../core/models/scheduler.models';
+import { initials } from '../../core/utils/user.utils';
+import { User, UserFilters, GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, ROLE_COLORS, MANAGER_DATA } from '../../core/models/scheduler.models';
 
 @Component({
   selector: 'app-users',
@@ -43,13 +44,12 @@ export class UsersComponent {
   page       = signal(0);
   pageSize   = signal(10);
 
-  readonly GROUPS    = GROUPS;
-  readonly LOCATIONS = LOCATIONS;
-  readonly MODELS    = MODELS;
-  readonly ROLES     = ROLES;
-  readonly MANAGERS  = MANAGERS;
+  readonly GROUPS      = GROUPS;
+  readonly LOCATIONS   = LOCATIONS;
+  readonly MODELS      = MODELS;
+  readonly ROLES       = ROLES;
+  readonly MANAGERS    = MANAGERS;
   readonly ROLE_COLORS = ROLE_COLORS;
-  readonly AVATAR_COLORS = AVATAR_COLORS;
 
   readonly displayedColumns = ['name','id','group','location','model','role','manager'];
 
@@ -88,9 +88,9 @@ export class UsersComponent {
   });
 
   // Contact card
-  contactVisible = false;
-  contactInfo: ContactInfo | null = null;
-  contactAnchor: DOMRect | null = null;
+  contactVisible = signal(false);
+  contactInfo    = signal<ContactInfo | null>(null);
+  contactAnchor  = signal<DOMRect | null>(null);
 
   constructor(public svc: ScheduleService, private router: Router) {}
 
@@ -122,13 +122,18 @@ export class UsersComponent {
     this.pageSize.set(e.pageSize);
   }
 
-  goToUser(id: string): void  { this.router.navigate(['/users', id]); }
-  addUser(): void             { this.router.navigate(['/users/new']); }
+  goToUser(id: string): void { this.router.navigate(['/users', id]); }
+  addUser(): void            { this.router.navigate(['/users/new']); }
 
-  initials(name: string): string { return this.svc.initials(name); }
+  goToManager(name: string): void {
+    const user = this.svc.getUserByName(name);
+    if (user) this.router.navigate(['/users', user.id]);
+  }
+
+  initials = initials;
 
   mgrColor(manager: string): string {
-    return AVATAR_COLORS[MANAGERS.indexOf(manager) % AVATAR_COLORS.length];
+    return MANAGER_DATA.find(m => m.name === manager)?.color ?? '#607D8B';
   }
 
   roleStyle(role: string): { bg: string; color: string } {
@@ -137,35 +142,31 @@ export class UsersComponent {
 
   showContact(event: MouseEvent, user: User): void {
     event.stopPropagation();
-    this.contactInfo = {
+    this.contactInfo.set({
       name: user.name, role: user.role, color: user.color,
       email: user.email, phone: user.phone, slack: user.slack,
       location: user.location, group: user.group, model: user.model,
-    };
-    this.contactAnchor = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.contactVisible = true;
+    });
+    this.contactAnchor.set((event.currentTarget as HTMLElement).getBoundingClientRect());
+    this.contactVisible.set(true);
   }
 
   showManagerContact(event: MouseEvent, managerName: string): void {
     event.stopPropagation();
-    const managerData: Record<string, Partial<ContactInfo>> = {
-      'Alice Johnson': { color:'#1565C0', email:'alice.johnson@company.com', phone:'+1 212 555 0110', slack:'@alice.johnson', location:'New York',      group:'Engineering' },
-      'Bob Chen':      { color:'#6A1B9A', email:'bob.chen@company.com',      phone:'+1 415 555 0122', slack:'@bob.chen',      location:'San Francisco', group:'Product'     },
-      'Carol Davis':   { color:'#B71C1C', email:'carol.davis@company.com',   phone:'+44 20 7946 0133',slack:'@carol.davis',   location:'London',        group:'Design'      },
-      'David Kim':     { color:'#00695C', email:'david.kim@company.com',     phone:'+49 30 12340044', slack:'@david.kim',     location:'Berlin',        group:'QA'          },
-      'Eve Müller':    { color:'#AD1457', email:'eve.muller@company.com',    phone:'+49 30 12340055', slack:'@eve.muller',    location:'Berlin',        group:'Management'  },
-    };
-    const m = managerData[managerName] ?? {};
-    this.contactInfo = {
-      name: managerName, role: 'Manager',
-      color: m.color ?? '#607D8B', email: m.email ?? '',
-      phone: m.phone ?? '', slack: m.slack ?? '',
-      location: m.location ?? '', group: m.group ?? 'Management', model: 'Full-Time',
-    };
-    this.contactAnchor = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.contactVisible = true;
+    const m = MANAGER_DATA.find(mgr => mgr.name === managerName);
+    this.contactInfo.set({
+      name: managerName, role: 'Manager', model: 'Full-Time',
+      color:    m?.color    ?? '#607D8B',
+      email:    m?.email    ?? '',
+      phone:    m?.phone    ?? '',
+      slack:    m?.slack    ?? '',
+      location: m?.location ?? '',
+      group:    m?.group    ?? 'Management',
+    });
+    this.contactAnchor.set((event.currentTarget as HTMLElement).getBoundingClientRect());
+    this.contactVisible.set(true);
   }
 
   @HostListener('document:keydown.escape')
-  onEsc(): void { this.contactVisible = false; }
+  onEsc(): void { this.contactVisible.set(false); }
 }

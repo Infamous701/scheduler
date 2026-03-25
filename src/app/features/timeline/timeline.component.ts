@@ -1,4 +1,4 @@
-import { Component, computed, signal, OnInit, HostListener, ElementRef } from '@angular/core';
+import { Component, computed, signal, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,12 +11,17 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 
 import { ScheduleService } from '../../core/services/schedule.service';
 import { ContactCardComponent, ContactInfo } from '../../shared/components/contact-card/contact-card.component';
+import { initials } from '../../core/utils/user.utils';
 import {
   SchedUser, UserSchedule, ShiftType, SHIFT_DEFS, TimelineFilters
 } from '../../core/models/scheduler.models';
+
+const EMPTY_FILTERS: TimelineFilters = { name:'', id:'', group:'', location:'', model:'', role:'', shift:'' };
 
 @Component({
   selector: 'app-timeline',
@@ -31,18 +36,24 @@ import {
   templateUrl: './timeline.component.html',
   styleUrls: ['./timeline.component.scss']
 })
-export class TimelineComponent implements OnInit {
-  drawerOpen = signal(false);
-  isMobile = false;
+export class TimelineComponent {
+  private readonly bp = inject(BreakpointObserver);
+  readonly svc = inject(ScheduleService);
 
-  filters = signal<TimelineFilters>({ name:'', id:'', group:'', site:'', model:'', role:'', shift:'' });
+  readonly isMobile = toSignal(
+    this.bp.observe([Breakpoints.Handset]).pipe(map(r => r.matches)),
+    { initialValue: false }
+  );
+
+  drawerOpen = signal(false);
+  filters = signal<TimelineFilters>({ ...EMPTY_FILTERS });
 
   activeFilterCount = computed(() =>
     Object.values(this.filters()).filter(v => v !== '').length
   );
 
   activeFilterChips = computed(() => {
-    const labels: Record<string, string> = { name:'Name', id:'ID', group:'Group', site:'Site', model:'Model', role:'Role', shift:'Shift' };
+    const labels: Record<string, string> = { name:'Name', id:'ID', group:'Group', location:'Location', model:'Model', role:'Role', shift:'Shift' };
     return Object.entries(this.filters())
       .filter(([, v]) => v !== '')
       .map(([k, v]) => ({ key: k, label: labels[k], value: v }));
@@ -55,19 +66,27 @@ export class TimelineComponent implements OnInit {
 
   weekNum = computed(() => this.svc.weekNum(this.svc.getMonday(this.svc.weekOffset())));
 
+  days = computed(() => {
+    const monday = this.svc.getMonday(this.svc.weekOffset());
+    const today  = new Date(); today.setHours(0,0,0,0);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = this.svc.addDays(monday, i);
+      return { date: d, isToday: d.getTime() === today.getTime(), isWeekend: d.getDay() === 0 || d.getDay() === 6 };
+    });
+  });
+
   filteredSchedule = computed<UserSchedule[]>(() => {
-    const offset = this.svc.weekOffset();
-    const monday = this.svc.getMonday(offset);
-    const days   = Array.from({ length: 7 }, (_, i) => this.svc.addDays(monday, i));
     const f = this.filters();
+    const days = this.days().map(d => d.date);
+    const offset = this.svc.weekOffset();
 
     const users = this.svc.schedUsers.filter(u => {
-      if (f.name  && !u.name.toLowerCase().includes(f.name.toLowerCase())) return false;
-      if (f.id    && !String(u.id).includes(f.id)) return false;
-      if (f.group && u.group !== f.group) return false;
-      if (f.site  && u.site  !== f.site)  return false;
-      if (f.model && u.model !== f.model) return false;
-      if (f.role  && u.role  !== f.role)  return false;
+      if (f.name     && !u.name.toLowerCase().includes(f.name.toLowerCase())) return false;
+      if (f.id       && !String(u.id).includes(f.id)) return false;
+      if (f.group    && u.group !== f.group)    return false;
+      if (f.location && u.site  !== f.location) return false;
+      if (f.model    && u.model !== f.model)    return false;
+      if (f.role     && u.role  !== f.role)     return false;
       if (f.shift) {
         if (f.shift === 'overtime') {
           const hasOT = days.some(d => {
@@ -99,15 +118,6 @@ export class TimelineComponent implements OnInit {
     ];
   });
 
-  days = computed(() => {
-    const monday = this.svc.getMonday(this.svc.weekOffset());
-    const today  = new Date(); today.setHours(0,0,0,0);
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = this.svc.addDays(monday, i);
-      return { date: d, isToday: d.getTime() === today.getTime(), isWeekend: d.getDay() === 0 || d.getDay() === 6 };
-    });
-  });
-
   readonly SHIFT_DEFS = SHIFT_DEFS;
   readonly DAY_NAMES  = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
   readonly MONTHS     = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -119,23 +129,15 @@ export class TimelineComponent implements OnInit {
     { value:'overtime', label:'Overtime ⚡' },
   ];
 
-  uniqueGroups = computed(() => [...new Set(this.svc.schedUsers.map(u => u.group))].sort());
-  uniqueSites  = computed(() => [...new Set(this.svc.schedUsers.map(u => u.site))].sort());
-  uniqueModels = computed(() => [...new Set(this.svc.schedUsers.map(u => u.model))].sort());
-  uniqueRoles  = computed(() => [...new Set(this.svc.schedUsers.map(u => u.role))].sort());
+  uniqueGroups     = computed(() => [...new Set(this.svc.schedUsers.map(u => u.group))].sort());
+  uniqueLocations  = computed(() => [...new Set(this.svc.schedUsers.map(u => u.site))].sort());
+  uniqueModels     = computed(() => [...new Set(this.svc.schedUsers.map(u => u.model))].sort());
+  uniqueRoles      = computed(() => [...new Set(this.svc.schedUsers.map(u => u.role))].sort());
 
   // Contact card
-  contactVisible = false;
-  contactInfo: ContactInfo | null = null;
-  contactAnchor: DOMRect | null = null;
-
-  constructor(public svc: ScheduleService, private bp: BreakpointObserver) {}
-
-  ngOnInit(): void {
-    this.bp.observe([Breakpoints.Handset]).subscribe(r => {
-      this.isMobile = r.matches;
-    });
-  }
+  contactVisible = signal(false);
+  contactInfo    = signal<ContactInfo | null>(null);
+  contactAnchor  = signal<DOMRect | null>(null);
 
   toggleDrawer(): void { this.drawerOpen.update(v => !v); }
 
@@ -148,15 +150,15 @@ export class TimelineComponent implements OnInit {
   }
 
   clearAllFilters(): void {
-    this.filters.set({ name:'', id:'', group:'', site:'', model:'', role:'', shift:'' });
+    this.filters.set({ ...EMPTY_FILTERS });
   }
 
   prevWeek():  void { this.svc.changeWeek(-1); }
   nextWeek():  void { this.svc.changeWeek(1);  }
   goToday():   void { this.svc.setWeekOffset(0); }
 
+  initials = initials;
   getShiftDef(shift: ShiftType) { return SHIFT_DEFS[shift]; }
-  initials(name: string): string { return this.svc.initials(name); }
 
   shiftLeft(shift: ShiftType, hourW: number): number {
     if (SHIFT_DEFS[shift].allDay) return 0;
@@ -172,15 +174,15 @@ export class TimelineComponent implements OnInit {
 
   showContact(event: MouseEvent, user: SchedUser): void {
     event.stopPropagation();
-    this.contactInfo = {
+    this.contactInfo.set({
       name: user.name, role: user.role, color: user.color,
       email: user.email, phone: user.phone, slack: user.slack,
       location: user.site, group: user.group, model: user.model,
-    };
-    this.contactAnchor = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    this.contactVisible = true;
+    });
+    this.contactAnchor.set((event.currentTarget as HTMLElement).getBoundingClientRect());
+    this.contactVisible.set(true);
   }
 
   @HostListener('document:keydown.escape')
-  onEsc(): void { this.contactVisible = false; }
+  onEsc(): void { this.contactVisible.set(false); }
 }

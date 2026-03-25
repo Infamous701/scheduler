@@ -100,7 +100,7 @@
         @for (chip of activeFilterChips(); track chip.key) {
           <span class="filter-chip-custom">
             {{ chip.label }}: <strong>{{ chip.value }}</strong>
-            <button (click)="clearFilter(chip.key as any)"><mat-icon>close</mat-icon></button>
+            <button (click)="clearFilter($any(chip.key))"><mat-icon>close</mat-icon></button>
           </span>
         }
       </div>
@@ -173,7 +173,7 @@
                 <td mat-cell *matCellDef="let u">
                   <div class="manager-cell">
                     <div class="mgr-avatar" [style.background]="mgrColor(u.manager)">{{ initials(u.manager) }}</div>
-                    <button class="name-link" (click)="goToUser(u.manager)">{{ u.manager }}</button>
+                    <button class="name-link" (click)="goToManager(u.manager)">{{ u.manager }}</button>
                     <button mat-icon-button class="contact-btn" (click)="showManagerContact($event, u.manager)" matTooltip="Manager contact">
                       <mat-icon>person_outline</mat-icon>
                     </button>
@@ -208,8 +208,8 @@
 </mat-sidenav-container>
 
 <app-contact-card
-  [visible]="contactVisible"
-  [contact]="contactInfo"
-  [anchorRect]="contactAnchor"
-  (close)="contactVisible = false">
+  [visible]="contactVisible()"
+  [contact]="contactInfo()"
+  [anchorRect]="contactAnchor()"
+  (close)="contactVisible.set(false)">
 </app-contact-card>

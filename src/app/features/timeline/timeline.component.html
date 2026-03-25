@@ -1,7 +1,7 @@
 <mat-sidenav-container class="sidenav-container">
 
   <!-- Filter Drawer -->
-  <mat-sidenav #drawer [mode]="isMobile ? 'over' : 'side'" [opened]="drawerOpen()">
+  <mat-sidenav #drawer [mode]="isMobile() ? 'over' : 'side'" [opened]="drawerOpen()">
     <div class="drawer-inner">
       <div class="drawer-header">
         <span class="drawer-title">
@@ -37,10 +37,10 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="filter-field">
-          <mat-label><mat-icon>location_on</mat-icon> Site</mat-label>
-          <mat-select [ngModel]="filters().site" (ngModelChange)="setFilter('site', $event)">
-            <mat-option value="">All sites</mat-option>
-            @for (s of uniqueSites(); track s) {
+          <mat-label><mat-icon>location_on</mat-icon> Location</mat-label>
+          <mat-select [ngModel]="filters().location" (ngModelChange)="setFilter('location', $event)">
+            <mat-option value="">All locations</mat-option>
+            @for (s of uniqueLocations(); track s) {
               <mat-option [value]="s">{{ s }}</mat-option>
             }
           </mat-select>
@@ -109,7 +109,7 @@
         @for (chip of activeFilterChips(); track chip.key) {
           <span class="filter-chip-custom">
             {{ chip.label }}: <strong>{{ chip.value }}</strong>
-            <button (click)="clearFilter(chip.key as any)"><mat-icon>close</mat-icon></button>
+            <button (click)="clearFilter($any(chip.key))"><mat-icon>close</mat-icon></button>
           </span>
         }
       </div>
@@ -173,7 +173,7 @@
                       {{ initials(sched.user.name) }}
                     </div>
                     <div class="user-info">
-                      <div class="user-name">{{ isMobile ? sched.user.name.split(' ')[0] : sched.user.name }}</div>
+                      <div class="user-name">{{ isMobile() ? sched.user.name.split(' ')[0] : sched.user.name }}</div>
                       <div class="user-role">{{ sched.user.role }}</div>
                     </div>
                     <button class="contact-btn" mat-icon-button
@@ -261,8 +261,8 @@
 
 <!-- Contact card popup -->
 <app-contact-card
-  [visible]="contactVisible"
-  [contact]="contactInfo"
-  [anchorRect]="contactAnchor"
-  (close)="contactVisible = false">
+  [visible]="contactVisible()"
+  [contact]="contactInfo()"
+  [anchorRect]="contactAnchor()"
+  (close)="contactVisible.set(false)">
 </app-contact-card>

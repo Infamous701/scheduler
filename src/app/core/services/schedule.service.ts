@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import {
   SchedUser, User, ShiftType, SHIFT_TYPES, UserSchedule,
-  GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, AVATAR_COLORS
+  GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, AVATAR_COLORS, MANAGER_DATA
 } from '../models/scheduler.models';
 
 const STORAGE_KEY = 'sched_users';
@@ -97,7 +97,8 @@ export class ScheduleService {
 
   addUser(u: Omit<User, 'id' | 'color'>): User {
     const users = this._allUsers();
-    const nextNum = users.length === 0 ? 1 : Math.max(...users.map(u => parseInt(u.id.replace('U-', ''), 10))) + 1;
+    const uNums = users.filter(u => u.id.startsWith('U-')).map(u => parseInt(u.id.slice(2), 10));
+    const nextNum = uNums.length === 0 ? 1 : Math.max(...uNums) + 1;
     const newId = `U-${String(nextNum).padStart(3, '0')}`;
     const color = AVATAR_COLORS[users.length % AVATAR_COLORS.length];
     const newUser: User = { ...u, id: newId, color };
@@ -130,7 +131,16 @@ export class ScheduleService {
       if (raw) {
         const parsed = JSON.parse(raw) as unknown[];
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(u => this.migrateUser(u as Record<string, unknown>));
+          const users = parsed.map(u => this.migrateUser(u as Record<string, unknown>));
+          // Ensure manager users exist (migration for existing stored data)
+          const managerUsers: User[] = MANAGER_DATA.map((m, i) => ({
+            id: `M-${String(i + 1).padStart(3, '0')}`,
+            name: m.name, email: m.email, phone: m.phone, slack: m.slack,
+            group: m.group, location: m.location, model: 'Full-Time',
+            role: 'Engineering Manager', manager: '', color: m.color,
+          }));
+          const withoutOldManagers = users.filter(u => !u.id.startsWith('M-'));
+          return [...managerUsers, ...withoutOldManagers];
         }
       }
     } catch {
@@ -169,7 +179,21 @@ export class ScheduleService {
     const ln = ['Rahman','Cole','Nair','Lee','Martinez','Watanabe','Osei','Brooks','Johnson','Chen','Davis','Kim','Singh','Patel','Williams','Brown','Jones','Garcia','Wilson','Moore'];
     const prefixes = ['+1 212','+1 415','+44 20','+49 30','+81 3','+65 6'];
 
-    return Array.from({ length: n }, (_, i) => {
+    const managerUsers: User[] = MANAGER_DATA.map((m, i) => ({
+      id:       `M-${String(i + 1).padStart(3, '0')}`,
+      name:     m.name,
+      email:    m.email,
+      phone:    m.phone,
+      slack:    m.slack,
+      group:    m.group,
+      location: m.location,
+      model:    'Full-Time',
+      role:     'Engineering Manager',
+      manager:  '',
+      color:    m.color,
+    }));
+
+    const regularUsers: User[] = Array.from({ length: n }, (_, i) => {
       const s = (i + 1) * 17;
       const first = fn[this.rand(s, fn.length)];
       const last  = ln[this.rand(s * 3, ln.length)];
@@ -188,5 +212,7 @@ export class ScheduleService {
         color:    AVATAR_COLORS[this.rand(s * 19, AVATAR_COLORS.length)],
       };
     });
+
+    return [...managerUsers, ...regularUsers];
   }
 }

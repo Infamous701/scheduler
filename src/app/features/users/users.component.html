@@ -171,7 +171,7 @@
               <ng-container matColumnDef="manager">
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Manager</th>
                 <td mat-cell *matCellDef="let u">
-                  <div class="manager-cell">
+                  <div class="manager-cell" *ngIf="u.manager">
                     <div class="mgr-avatar" [style.background]="mgrColor(u.manager)">{{ initials(u.manager) }}</div>
                     <button class="name-link" (click)="goToManager(u.manager)">{{ u.manager }}</button>
                     <button class="contact-btn" (click)="showManagerContact($event, u.manager)" matTooltip="Manager contact">

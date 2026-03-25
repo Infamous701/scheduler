@@ -42,15 +42,14 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-size: 16px;
   background: var(--bg);
   color: var(--text);
 }
 
 /* Shared utility classes */
 .page-container {
-  padding: 16px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 16px 10%;
 }
 
 .page-header {
@@ -69,13 +68,13 @@ html, body {
 }
 
 .page-title {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.2;
 }
 
 .page-subtitle {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   margin-top: 1px;
 }

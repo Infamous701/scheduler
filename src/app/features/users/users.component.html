@@ -109,11 +109,19 @@
       <mat-card class="table-card">
         <mat-card-content>
           <div class="table-wrap">
-            <table mat-table [dataSource]="pagedUsers()" matSort (matSortChange)="onSort($event)" class="users-table">
+            <ng-template #sortIcon let-s>
+              @if (s) {
+                <mat-icon class="sort-icon">{{ s.dir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                @if (sortCols().length > 1) { <span class="sort-rank">{{ s.rank }}</span> }
+              }
+            </ng-template>
+            <table mat-table [dataSource]="pagedUsers()" class="users-table">
 
               <!-- Name -->
               <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+                <th mat-header-cell *matHeaderCellDef>
+                  <button class="sort-header-btn" (click)="onSort('name', $event.ctrlKey)">Name <ng-container *ngTemplateOutlet="sortIcon; context: { $implicit: sortState('name') }"></ng-container></button>
+                </th>
                 <td mat-cell *matCellDef="let u">
                   <div class="user-cell">
                     <div class="avatar" [style.background]="u.color">{{ initials(u.name) }}</div>
@@ -129,7 +137,9 @@
 
               <!-- ID -->
               <ng-container matColumnDef="id">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+                <th mat-header-cell *matHeaderCellDef>
+                  <button class="sort-header-btn" (click)="onSort('id', $event.ctrlKey)">ID <ng-container *ngTemplateOutlet="sortIcon; context: { $implicit: sortState('id') }"></ng-container></button>
+                </th>
                 <td mat-cell *matCellDef="let u">
                   <span class="id-badge">{{ u.id }}</span>
                 </td>
@@ -137,13 +147,17 @@
 
               <!-- Group -->
               <ng-container matColumnDef="group">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Group</th>
+                <th mat-header-cell *matHeaderCellDef>
+                  <button class="sort-header-btn" (click)="onSort('group', $event.ctrlKey)">Group <ng-container *ngTemplateOutlet="sortIcon; context: { $implicit: sortState('group') }"></ng-container></button>
+                </th>
                 <td mat-cell *matCellDef="let u">{{ u.group }}</td>
               </ng-container>
 
               <!-- Location -->
               <ng-container matColumnDef="location">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
+                <th mat-header-cell *matHeaderCellDef>
+                  <button class="sort-header-btn" (click)="onSort('location', $event.ctrlKey)">Location <ng-container *ngTemplateOutlet="sortIcon; context: { $implicit: sortState('location') }"></ng-container></button>
+                </th>
                 <td mat-cell *matCellDef="let u">
                   <mat-icon class="loc-icon">location_on</mat-icon>{{ u.location }}
                 </td>
@@ -151,13 +165,17 @@
 
               <!-- Model -->
               <ng-container matColumnDef="model">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Model</th>
+                <th mat-header-cell *matHeaderCellDef>
+                  <button class="sort-header-btn" (click)="onSort('model', $event.ctrlKey)">Model <ng-container *ngTemplateOutlet="sortIcon; context: { $implicit: sortState('model') }"></ng-container></button>
+                </th>
                 <td mat-cell *matCellDef="let u">{{ u.model }}</td>
               </ng-container>
 
               <!-- Role -->
               <ng-container matColumnDef="role">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Role</th>
+                <th mat-header-cell *matHeaderCellDef>
+                  <button class="sort-header-btn" (click)="onSort('role', $event.ctrlKey)">Role <ng-container *ngTemplateOutlet="sortIcon; context: { $implicit: sortState('role') }"></ng-container></button>
+                </th>
                 <td mat-cell *matCellDef="let u">
                   <span class="role-badge"
                     [style.background]="roleStyle(u.role).bg"
@@ -169,7 +187,9 @@
 
               <!-- Manager -->
               <ng-container matColumnDef="manager">
-                <th mat-header-cell *matHeaderCellDef mat-sort-header>Manager</th>
+                <th mat-header-cell *matHeaderCellDef>
+                  <button class="sort-header-btn" (click)="onSort('manager', $event.ctrlKey)">Manager <ng-container *ngTemplateOutlet="sortIcon; context: { $implicit: sortState('manager') }"></ng-container></button>
+                </th>
                 <td mat-cell *matCellDef="let u">
                   <div class="manager-cell" *ngIf="u.manager">
                     <div class="mgr-avatar" [style.background]="mgrColor(u.manager)">{{ initials(u.manager) }}</div>
@@ -196,7 +216,7 @@
           <mat-paginator
             [length]="filteredUsers().length"
             [pageSize]="pageSize()"
-            [pageSizeOptions]="[5,10,20,50]"
+            [pageSizeOptions]="[10,25,50,100]" [pageSize]="pageSize()"
             (page)="onPage($event)"
             showFirstLastButtons>
           </mat-paginator>

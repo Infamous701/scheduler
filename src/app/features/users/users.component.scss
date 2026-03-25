@@ -1,4 +1,5 @@
-.sidenav-container { height: 100%; background: var(--bg); }
+:host { display: flex; flex-direction: column; flex: 1; height: 100%; }
+.sidenav-container { flex: 1; height: 100%; background: var(--bg); }
 
 mat-sidenav {
   width: 272px;
@@ -31,15 +32,33 @@ mat-sidenav {
 
 .table-wrap {
   overflow-x: auto;
-  max-height: calc(100vh - 300px);
+  max-height: calc(100vh - 220px);
   overflow-y: auto;
+}
+
+.sort-header-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-size: inherit; font-weight: 700; color: var(--muted);
+  font-family: inherit; letter-spacing: .5px; white-space: nowrap;
+  &:hover { color: var(--accent); }
+  .sort-icon { font-size: 14px; width: 14px; height: 14px; color: var(--accent); }
+  .sort-rank { font-size: 10px; font-weight: 800; color: var(--accent); line-height: 1; }
 }
 
 .users-table {
   width: 100%;
-  th.mat-header-cell { background: var(--surf2); font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .5px; white-space: nowrap; }
-  td.mat-cell { font-size: 13px; vertical-align: middle; }
+  th.mat-header-cell { background: var(--surf2); font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .5px; white-space: nowrap; }
+  td.mat-cell { font-size: 15px; vertical-align: middle; }
   tr.mat-row:hover { background: var(--surf2); }
+
+  .mat-column-name     { width: 20%; min-width: 160px; }
+  .mat-column-id       { width: 7%;  min-width: 70px; }
+  .mat-column-role     { width: 18%; min-width: 140px; }
+  .mat-column-group    { width: 12%; min-width: 100px; }
+  .mat-column-location { width: 12%; min-width: 100px; }
+  .mat-column-model    { width: 10%; min-width: 80px; }
+  .mat-column-manager  { width: 21%; min-width: 160px; }
 }
 
 .user-cell {
@@ -61,7 +80,7 @@ mat-sidenav {
 
 .name-link {
   background: none; border: none; cursor: pointer; padding: 0;
-  font-size: 13px; font-weight: 600; color: var(--text); font-family: inherit;
+  font-size: 15px; font-weight: 600; color: var(--text); font-family: inherit;
   text-align: left; white-space: nowrap;
   &:hover { color: var(--accent); text-decoration: underline; }
 }
@@ -80,14 +99,14 @@ mat-sidenav {
 }
 
 .id-badge {
-  font-size: 10px; font-weight: 700; font-family: monospace;
+  font-size: 12px; font-weight: 700; font-family: monospace;
   background: var(--surf2); border: 1px solid var(--border);
   border-radius: 4px; padding: 2px 6px; color: var(--muted);
   white-space: nowrap;
 }
 
 .role-badge {
-  font-size: 10px; font-weight: 600; padding: 2px 8px;
+  font-size: 12px; font-weight: 600; padding: 2px 8px;
   border-radius: 20px; white-space: nowrap;
 }
 

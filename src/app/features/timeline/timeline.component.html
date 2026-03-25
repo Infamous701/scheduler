@@ -98,7 +98,7 @@
           <div>
             <div class="page-title">Timeline</div>
             <div class="page-subtitle">
-              {{ filteredSchedule().length }} of {{ svc.schedUsers.length }} members
+              {{ filteredUsers().length }} of {{ svc.allUsers().length }} members
             </div>
           </div>
         </div>
@@ -127,21 +127,6 @@
         }
       </div>
 
-      <!-- Legend -->
-      <div class="legend">
-        <span class="legend-title">Shifts</span>
-        <div class="legend-item"><div class="swatch sb-d"></div><span style="color:var(--d-tx)">Day</span></div>
-        <div class="legend-item"><div class="swatch sb-n"></div><span style="color:var(--n-tx)">Night</span></div>
-        <div class="legend-item"><div class="swatch sb-r"></div><span style="color:var(--r-tx)">Remote</span></div>
-        <div class="legend-item"><div class="swatch sb-v"></div><span style="color:var(--v-tx)">Virtual</span></div>
-        <div class="legend-item"><div class="swatch sb-p"></div><span style="color:var(--p-tx)">PTO</span></div>
-        <div class="legend-item"><div class="swatch sb-h"></div><span style="color:var(--h-tx)">Holiday</span></div>
-        <div class="legend-item ot-note">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="#ef4444"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
-          <span style="color:#8a92a6">= Overtime</span>
-        </div>
-      </div>
-
       <!-- Week nav -->
       <div class="week-nav">
         <div class="week-btns">
@@ -152,10 +137,10 @@
           <button mat-stroked-button (click)="nextWeek()">
             Next <mat-icon>chevron_right</mat-icon>
           </button>
+          <button mat-flat-button color="primary" (click)="goToday()">
+            <mat-icon>today</mat-icon> Today
+          </button>
         </div>
-        <button mat-flat-button color="primary" (click)="goToday()">
-          <mat-icon>today</mat-icon> Today
-        </button>
       </div>
 
       <!-- Timeline grid -->
@@ -166,7 +151,12 @@
 
               <!-- User column -->
               <div class="col-users">
-                <div class="col-users-header">Member</div>
+                <div class="col-users-header">
+                  <button class="sort-btn" (click)="toggleSort()" [matTooltip]="sortDir() === 'asc' ? 'Sort Z→A' : 'Sort A→Z'">
+                    Users
+                    <mat-icon>{{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+                  </button>
+                </div>
                 @for (sched of filteredSchedule(); track sched.user.id) {
                   <div class="user-row">
                     <div class="avatar" [style.background]="sched.user.color">
@@ -205,7 +195,7 @@
                   @for (day of days(); track day.date.getTime()) {
                     <div class="day-ticks">
                       @for (h of [0,6,12,18]; track h) {
-                        <div class="tick-label" [style.left.px]="h * 8">
+                        <div class="tick-label" [style.left.%]="(h / 24) * 100">
                           {{ h.toString().padStart(2,'0') }}
                         </div>
                       }
@@ -220,17 +210,21 @@
                       <div class="day-seg"
                         [class.is-today]="day.isToday"
                         [class.is-weekend]="day.isWeekend">
+                        @if (day.isToday) {
+                          <div class="now-line" [style.left.%]="nowPct()" [matTooltip]="nowTime()" matTooltipPosition="above"></div>
+                        }
                         @if (day.shift !== 'off') {
                           <div class="shift-block"
                             [ngClass]="getShiftDef(day.shift).cssClass"
                             [class.all-day]="getShiftDef(day.shift).allDay"
-                            [style.left.px]="shiftLeft(day.shift, 8)"
-                            [style.width.px]="shiftWidth(day.shift, 8)"
-                            [matTooltip]="sched.user.name + ' – ' + getShiftDef(day.shift).label">
+                            [style.left.%]="shiftLeftPct(day.shift)"
+                            [style.width.%]="shiftWidthPct(day.shift, day.isOvertime)"
+                            [style.z-index]="day.shift === 'night' ? 4 : 1"
+                            [matTooltip]="shiftTooltip(sched.user.name, day.shift, day.isOvertime)">
                             <span class="sb-label">{{ getShiftDef(day.shift).label }}</span>
                             @if (day.isOvertime && day.shift !== 'pto' && day.shift !== 'holiday') {
                               <span class="ot-badge">
-                                <svg width="8" height="8" viewBox="0 0 24 24" fill="#ef4444">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444">
                                   <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
                                 </svg>
                               </span>
@@ -249,8 +243,30 @@
 
         <mat-divider></mat-divider>
 
+        <mat-paginator
+          [length]="filteredUsers().length"
+          [pageSize]="pageSize()"
+          [pageIndex]="page()"
+          [pageSizeOptions]="[10,25,50,100]"
+          (page)="onPage($event)"
+          showFirstLastButtons>
+        </mat-paginator>
+
         <div class="tl-footer">
-          <span><mat-icon>schedule</mat-icon> {{ filteredSchedule().length }} of {{ svc.schedUsers.length }} members shown</span>
+          <span><mat-icon>schedule</mat-icon> {{ filteredSchedule().length }} of {{ filteredUsers().length }} members shown</span>
+          <div class="legend">
+            <span class="legend-title">Shifts</span>
+            <div class="legend-item"><div class="swatch sb-d"></div><span style="color:var(--d-tx)">Day</span></div>
+            <div class="legend-item"><div class="swatch sb-n"></div><span style="color:var(--n-tx)">Night</span></div>
+            <div class="legend-item"><div class="swatch sb-r"></div><span style="color:var(--r-tx)">Remote</span></div>
+            <div class="legend-item"><div class="swatch sb-v"></div><span style="color:var(--v-tx)">Virtual</span></div>
+            <div class="legend-item"><div class="swatch sb-p"></div><span style="color:var(--p-tx)">PTO</span></div>
+            <div class="legend-item"><div class="swatch sb-h"></div><span style="color:var(--h-tx)">Holiday</span></div>
+            <div class="legend-item ot-note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+              <span style="color:#8a92a6">= Overtime</span>
+            </div>
+          </div>
           <span><mat-icon>view_week</mat-icon> Week {{ weekNum() }}</span>
         </div>
       </mat-card>

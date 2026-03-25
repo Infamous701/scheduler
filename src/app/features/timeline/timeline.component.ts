@@ -1,4 +1,4 @@
-import { Component, computed, signal, HostListener, inject } from '@angular/core';
+import { Component, computed, signal, HostListener, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs';
@@ -18,7 +19,7 @@ import { ScheduleService } from '../../core/services/schedule.service';
 import { ContactCardComponent, ContactInfo } from '../../shared/components/contact-card/contact-card.component';
 import { initials } from '../../core/utils/user.utils';
 import {
-  SchedUser, UserSchedule, ShiftType, SHIFT_DEFS, TimelineFilters
+  SchedUser, User, UserSchedule, ShiftType, SHIFT_DEFS, TimelineFilters
 } from '../../core/models/scheduler.models';
 
 const EMPTY_FILTERS: TimelineFilters = { name:'', id:'', group:'', location:'', model:'', role:'', shift:'' };
@@ -31,12 +32,13 @@ const EMPTY_FILTERS: TimelineFilters = { name:'', id:'', group:'', location:'', 
     MatIconModule, MatButtonModule, MatTooltipModule,
     MatSidenavModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatCardModule, MatDividerModule,
+    MatPaginatorModule,
     ContactCardComponent,
   ],
   templateUrl: './timeline.component.html',
   styleUrls: ['./timeline.component.scss']
 })
-export class TimelineComponent {
+export class TimelineComponent implements OnDestroy {
   private readonly bp = inject(BreakpointObserver);
   readonly svc = inject(ScheduleService);
 
@@ -45,8 +47,27 @@ export class TimelineComponent {
     { initialValue: false }
   );
 
+  private nowPctValue(): number {
+    const n = new Date();
+    return ((n.getHours() * 60 + n.getMinutes()) / (24 * 60)) * 100;
+  }
+  private nowTimeValue(): string {
+    const n = new Date();
+    return n.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  nowPct  = signal(this.nowPctValue());
+  nowTime = signal(this.nowTimeValue());
+  private readonly _clockTimer = setInterval(() => {
+    this.nowPct.set(this.nowPctValue());
+    this.nowTime.set(this.nowTimeValue());
+  }, 60_000);
+  ngOnDestroy(): void { clearInterval(this._clockTimer); }
+
   drawerOpen = signal(false);
-  filters = signal<TimelineFilters>({ ...EMPTY_FILTERS });
+  filters    = signal<TimelineFilters>({ ...EMPTY_FILTERS });
+  sortDir    = signal<'asc' | 'desc'>('asc');
+  page       = signal(0);
+  pageSize   = signal(10);
 
   activeFilterCount = computed(() =>
     Object.values(this.filters()).filter(v => v !== '').length
@@ -75,46 +96,63 @@ export class TimelineComponent {
     });
   });
 
-  filteredSchedule = computed<UserSchedule[]>(() => {
+  filteredUsers = computed<User[]>(() => {
     const f = this.filters();
     const days = this.days().map(d => d.date);
+    const dir = this.sortDir() === 'asc' ? 1 : -1;
+
+    return this.svc.allUsers()
+      .filter(u => {
+        if (f.name     && !u.name.toLowerCase().includes(f.name.toLowerCase())) return false;
+        if (f.id       && !u.id.toLowerCase().includes(f.id.toLowerCase()))     return false;
+        if (f.group    && u.group    !== f.group)    return false;
+        if (f.location && u.location !== f.location) return false;
+        if (f.model    && u.model    !== f.model)    return false;
+        if (f.role     && u.role     !== f.role)     return false;
+        if (f.shift) {
+          const numId = parseInt(u.id.replace(/\D/g, ''), 10) || 0;
+          if (f.shift === 'overtime') {
+            const hasOT = days.some(d => {
+              const sh = this.svc.getShift(numId, d);
+              return this.svc.getIsOvertime(numId, d) && sh !== 'off' && sh !== 'pto' && sh !== 'holiday';
+            });
+            if (!hasOT) return false;
+          } else {
+            if (!days.some(d => this.svc.getShift(numId, d) === f.shift)) return false;
+          }
+        }
+        return true;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name) * dir);
+  });
+
+  filteredSchedule = computed<UserSchedule[]>(() => {
+    const start = this.page() * this.pageSize();
+    const paged = this.filteredUsers().slice(start, start + this.pageSize());
     const offset = this.svc.weekOffset();
 
-    const users = this.svc.schedUsers.filter(u => {
-      if (f.name     && !u.name.toLowerCase().includes(f.name.toLowerCase())) return false;
-      if (f.id       && !String(u.id).includes(f.id)) return false;
-      if (f.group    && u.group !== f.group)    return false;
-      if (f.location && u.site  !== f.location) return false;
-      if (f.model    && u.model !== f.model)    return false;
-      if (f.role     && u.role  !== f.role)     return false;
-      if (f.shift) {
-        if (f.shift === 'overtime') {
-          const hasOT = days.some(d => {
-            const sh = this.svc.getShift(u.id, d);
-            return this.svc.getIsOvertime(u.id, d) && sh !== 'off' && sh !== 'pto' && sh !== 'holiday';
-          });
-          if (!hasOT) return false;
-        } else {
-          if (!days.some(d => this.svc.getShift(u.id, d) === f.shift)) return false;
-        }
-      }
-      return true;
+    return paged.map(u => {
+      const numId = parseInt(u.id.replace(/\D/g, ''), 10) || 0;
+      const schedUser: SchedUser = {
+        id: numId, name: u.name, role: u.role, color: u.color,
+        group: u.group, site: u.location, model: u.model,
+        email: u.email, phone: u.phone, slack: u.slack,
+      };
+      return this.svc.buildSchedule([schedUser], offset)[0];
     });
-
-    return this.svc.buildSchedule(users, offset);
   });
 
   stats = computed(() => {
     const scheds = this.filteredSchedule();
-    const total   = scheds.reduce((a, s) => a + s.days.filter(d => d.shift !== 'off').length, 0);
-    const onsite  = scheds.reduce((a, s) => a + s.days.filter(d => ['day','night'].includes(d.shift)).length, 0);
-    const remote  = scheds.reduce((a, s) => a + s.days.filter(d => ['remote','virtual'].includes(d.shift)).length, 0);
-    const pto     = scheds.reduce((a, s) => a + s.days.filter(d => d.shift === 'pto' || d.shift === 'holiday').length, 0);
+    const total  = scheds.reduce((a, s) => a + s.days.filter(d => d.shift !== 'off').length, 0);
+    const onsite = scheds.reduce((a, s) => a + s.days.filter(d => ['day','night'].includes(d.shift)).length, 0);
+    const remote = scheds.reduce((a, s) => a + s.days.filter(d => ['remote','virtual'].includes(d.shift)).length, 0);
+    const pto    = scheds.reduce((a, s) => a + s.days.filter(d => d.shift === 'pto' || d.shift === 'holiday').length, 0);
     return [
-      { label: 'Total Shifts',  value: total,  sub: 'this week',     icon: 'event_note'   },
-      { label: 'On-Site',       value: onsite, sub: 'shifts',        icon: 'business'     },
-      { label: 'Remote',        value: remote, sub: 'remote/virtual',icon: 'home_work'    },
-      { label: 'PTO / Holiday', value: pto,    sub: 'days',          icon: 'beach_access' },
+      { label: 'Total Shifts',  value: total,  sub: 'this week',      icon: 'event_note'   },
+      { label: 'On-Site',       value: onsite, sub: 'shifts',         icon: 'business'     },
+      { label: 'Remote',        value: remote, sub: 'remote/virtual', icon: 'home_work'    },
+      { label: 'PTO / Holiday', value: pto,    sub: 'days',           icon: 'beach_access' },
     ];
   });
 
@@ -129,10 +167,10 @@ export class TimelineComponent {
     { value:'overtime', label:'Overtime ⚡' },
   ];
 
-  uniqueGroups     = computed(() => [...new Set(this.svc.schedUsers.map(u => u.group))].sort());
-  uniqueLocations  = computed(() => [...new Set(this.svc.schedUsers.map(u => u.site))].sort());
-  uniqueModels     = computed(() => [...new Set(this.svc.schedUsers.map(u => u.model))].sort());
-  uniqueRoles      = computed(() => [...new Set(this.svc.schedUsers.map(u => u.role))].sort());
+  uniqueGroups     = computed(() => [...new Set(this.svc.allUsers().map(u => u.group))].sort());
+  uniqueLocations  = computed(() => [...new Set(this.svc.allUsers().map(u => u.location))].sort());
+  uniqueModels     = computed(() => [...new Set(this.svc.allUsers().map(u => u.model))].sort());
+  uniqueRoles      = computed(() => [...new Set(this.svc.allUsers().map(u => u.role))].sort());
 
   // Contact card
   contactVisible = signal(false);
@@ -143,14 +181,27 @@ export class TimelineComponent {
 
   setFilter(key: keyof TimelineFilters, value: string): void {
     this.filters.update(f => ({ ...f, [key]: value }));
+    this.page.set(0);
   }
 
   clearFilter(key: keyof TimelineFilters): void {
     this.filters.update(f => ({ ...f, [key]: '' }));
+    this.page.set(0);
   }
 
   clearAllFilters(): void {
     this.filters.set({ ...EMPTY_FILTERS });
+    this.page.set(0);
+  }
+
+  toggleSort(): void {
+    this.sortDir.update(d => d === 'asc' ? 'desc' : 'asc');
+    this.page.set(0);
+  }
+
+  onPage(e: PageEvent): void {
+    this.page.set(e.pageIndex);
+    this.pageSize.set(e.pageSize);
   }
 
   prevWeek():  void { this.svc.changeWeek(-1); }
@@ -170,6 +221,28 @@ export class TimelineComponent {
     if (def.allDay) return hourW * 24;
     if (shift === 'night') return (24 - def.start) * hourW;
     return (def.end - def.start) * hourW;
+  }
+
+  shiftTooltip(name: string, shift: ShiftType, overtime = false): string {
+    const def = SHIFT_DEFS[shift];
+    if (def.allDay) return name;
+    const fmt = (h: number) => `${String(h % 24).toString().padStart(2, '0')}:00`;
+    const end = overtime ? def.overtimeEnd : def.end;
+    const endStr = (shift === 'night' && end <= def.start) ? `${fmt(end)} (+1)` : fmt(end);
+    return `${name}  (${fmt(def.start)} – ${endStr})`;
+  }
+
+  shiftLeftPct(shift: ShiftType): number {
+    if (SHIFT_DEFS[shift].allDay) return 0;
+    return (SHIFT_DEFS[shift].start / 24) * 100;
+  }
+
+  shiftWidthPct(shift: ShiftType, overtime = false): number {
+    const def = SHIFT_DEFS[shift];
+    if (def.allDay) return 100;
+    const end = overtime ? def.overtimeEnd : def.end;
+    if (shift === 'night') return ((24 - def.start + end) / 24) * 100;
+    return ((end - def.start) / 24) * 100;
   }
 
   showContact(event: MouseEvent, user: SchedUser): void {

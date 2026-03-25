@@ -76,9 +76,10 @@ export class ScheduleService {
 
     return users.map(u => ({
       user: u,
-      days: days.map(date => ({
+      days: days.map((date, i) => ({
         date,
         shift: this.getShift(u.id, date),
+        prevShift: i > 0 ? this.getShift(u.id, days[i - 1]) : 'off' as const,
         isOvertime: this.getIsOvertime(u.id, date),
         isToday: date.getTime() === today.getTime(),
         isWeekend: date.getDay() === 0 || date.getDay() === 6,

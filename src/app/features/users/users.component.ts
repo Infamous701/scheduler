@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSortModule, Sort } from '@angular/material/sort';
+import { MatSortModule } from '@angular/material/sort';
 import { MatChipsModule } from '@angular/material/chips';
 
 import { ScheduleService } from '../../core/services/schedule.service';
@@ -39,8 +39,7 @@ export class UsersComponent {
 
   filters = signal<UserFilters>({ name:'', id:'', group:'', location:'', model:'', role:'', manager:'' });
 
-  sortCol    = signal<keyof User>('name');
-  sortDir    = signal<'asc'|'desc'>('asc');
+  sortCols = signal<{ col: keyof User; dir: 'asc' | 'desc' }[]>([{ col: 'name', dir: 'asc' }]);
   page       = signal(0);
   pageSize   = signal(10);
 
@@ -66,8 +65,7 @@ export class UsersComponent {
 
   filteredUsers = computed(() => {
     const f = this.filters();
-    const col = this.sortCol();
-    const dir = this.sortDir() === 'asc' ? 1 : -1;
+    const sorts = this.sortCols();
     return this.svc.allUsers()
       .filter(u => {
         if (f.name     && !u.name.toLowerCase().includes(f.name.toLowerCase())) return false;
@@ -79,7 +77,13 @@ export class UsersComponent {
         if (f.manager  && u.manager  !== f.manager)  return false;
         return true;
       })
-      .sort((a, b) => (a[col] as string).localeCompare(b[col] as string) * dir);
+      .sort((a, b) => {
+        for (const { col, dir } of sorts) {
+          const cmp = (a[col] as string).localeCompare(b[col] as string);
+          if (cmp !== 0) return dir === 'asc' ? cmp : -cmp;
+        }
+        return 0;
+      });
   });
 
   pagedUsers = computed(() => {
@@ -111,10 +115,27 @@ export class UsersComponent {
     this.page.set(0);
   }
 
-  onSort(sort: Sort): void {
-    this.sortCol.set((sort.active as keyof User) || 'name');
-    this.sortDir.set(sort.direction === 'desc' ? 'desc' : 'asc');
+  onSort(col: keyof User, multi: boolean): void {
+    this.sortCols.update(sorts => {
+      const idx = sorts.findIndex(s => s.col === col);
+      if (!multi) {
+        // Single sort: replace all, cycle asc → desc → none
+        if (idx === -1 || sorts.length > 1) return [{ col, dir: 'asc' }];
+        if (sorts[0].dir === 'asc') return [{ col, dir: 'desc' }];
+        return [];
+      }
+      // Multi sort (Ctrl+click): add/cycle/remove
+      if (idx === -1) return [...sorts, { col, dir: 'asc' }];
+      if (sorts[idx].dir === 'asc') return sorts.map((s, i) => i === idx ? { ...s, dir: 'desc' as const } : s);
+      return sorts.filter((_, i) => i !== idx);
+    });
     this.page.set(0);
+  }
+
+  sortState(col: keyof User): { dir: 'asc' | 'desc'; rank: number } | null {
+    const sorts = this.sortCols();
+    const idx = sorts.findIndex(s => s.col === col);
+    return idx === -1 ? null : { dir: sorts[idx].dir, rank: idx + 1 };
   }
 
   onPage(e: PageEvent): void {

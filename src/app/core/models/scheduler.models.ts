@@ -3,6 +3,7 @@ export type ShiftType = 'day' | 'night' | 'remote' | 'pto' | 'holiday' | 'virtua
 export interface ShiftDef {
   start: number;
   end: number;
+  overtimeEnd: number;
   label: string;
   cssClass: string;
   hours: number;
@@ -10,13 +11,13 @@ export interface ShiftDef {
 }
 
 export const SHIFT_DEFS: Record<ShiftType, ShiftDef> = {
-  day:     { start: 7,  end: 19, label: 'DAY',     cssClass: 'sb-d', hours: 12, allDay: false },
-  night:   { start: 19, end: 7,  label: 'NIGHT',   cssClass: 'sb-n', hours: 12, allDay: false },
-  remote:  { start: 9,  end: 17, label: 'REMOTE',  cssClass: 'sb-r', hours: 8,  allDay: false },
-  pto:     { start: 0,  end: 24, label: 'PTO',     cssClass: 'sb-p', hours: 0,  allDay: true  },
-  holiday: { start: 0,  end: 24, label: 'HOLIDAY', cssClass: 'sb-h', hours: 0,  allDay: true  },
-  virtual: { start: 9,  end: 17, label: 'VIRTUAL', cssClass: 'sb-v', hours: 8,  allDay: false },
-  off:     { start: 0,  end: 0,  label: 'OFF',     cssClass: '',     hours: 0,  allDay: false  },
+  day:     { start: 7,  end: 15, overtimeEnd: 17, label: 'DAY',     cssClass: 'sb-d', hours: 8,  allDay: false },
+  night:   { start: 21, end: 5,  overtimeEnd: 7,  label: 'NIGHT',   cssClass: 'sb-n', hours: 8,  allDay: false },
+  remote:  { start: 9,  end: 17, overtimeEnd: 19, label: 'REMOTE',  cssClass: 'sb-r', hours: 8,  allDay: false },
+  pto:     { start: 0,  end: 24, overtimeEnd: 24, label: 'PTO',     cssClass: 'sb-p', hours: 0,  allDay: true  },
+  holiday: { start: 0,  end: 24, overtimeEnd: 24, label: 'HOLIDAY', cssClass: 'sb-h', hours: 0,  allDay: true  },
+  virtual: { start: 9,  end: 17, overtimeEnd: 19, label: 'VIRTUAL', cssClass: 'sb-v', hours: 8,  allDay: false },
+  off:     { start: 0,  end: 0,  overtimeEnd: 0,  label: 'OFF',     cssClass: '',     hours: 0,  allDay: false  },
 };
 
 export const SHIFT_TYPES: ShiftType[] = ['day', 'night', 'remote', 'pto', 'holiday', 'virtual', 'off'];
@@ -51,6 +52,7 @@ export interface User {
 export interface DaySchedule {
   date: Date;
   shift: ShiftType;
+  prevShift: ShiftType;
   isOvertime: boolean;
   isToday: boolean;
   isWeekend: boolean;

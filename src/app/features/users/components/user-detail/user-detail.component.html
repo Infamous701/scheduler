@@ -1,0 +1,125 @@
+<div class="ud-page">
+
+  <!-- Back -->
+  <button class="back-btn" (click)="cancel()">
+    <mat-icon>chevron_left</mat-icon> Back to Users
+  </button>
+
+  <!-- Header card -->
+  <mat-card class="header-card">
+    <mat-card-content>
+      <div class="hdr-row">
+        <div class="hdr-avatar" [style.background]="avatarColor()">{{ avatarLabel() }}</div>
+        <div class="hdr-info">
+          <div class="hdr-name">{{ headerName() }}</div>
+          <div class="hdr-sub">{{ headerSub() }}</div>
+        </div>
+        <span class="mode-badge">{{ modeBadge() }}</span>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Identity -->
+  <mat-card class="section-card">
+    <mat-card-content>
+      <div class="section-title">
+        <mat-icon>badge</mat-icon> Identity
+      </div>
+      <div class="field-grid">
+
+        <mat-form-field appearance="outline">
+          <mat-label><mat-icon>badge</mat-icon> ID</mat-label>
+          <input matInput [value]="form().id ?? ''" readonly placeholder="Auto-generated">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label><mat-icon>person_outline</mat-icon> Full Name</mat-label>
+          <input matInput
+            [ngModel]="form().name"
+            (ngModelChange)="setField('name', $event)"
+            placeholder="e.g. Alice Johnson">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label><mat-icon>email</mat-icon> Email</mat-label>
+          <input matInput type="email"
+            [ngModel]="form().email"
+            (ngModelChange)="setField('email', $event)"
+            placeholder="name@company.com">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label><mat-icon>phone</mat-icon> Phone</mat-label>
+          <input matInput
+            [ngModel]="form().phone"
+            (ngModelChange)="setField('phone', $event)"
+            placeholder="+1 555 000 0000">
+        </mat-form-field>
+
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Organisation -->
+  <mat-card class="section-card">
+    <mat-card-content>
+      <div class="section-title">
+        <mat-icon>business</mat-icon> Organisation
+      </div>
+      <div class="field-grid">
+
+        <mat-form-field appearance="outline">
+          <mat-label><mat-icon>group</mat-icon> Group</mat-label>
+          <mat-select [ngModel]="form().group" (ngModelChange)="setField('group', $event)">
+            <mat-option value="">Select group…</mat-option>
+            @for (g of GROUPS; track g) { <mat-option [value]="g">{{ g }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label><mat-icon>supervisor_account</mat-icon> Manager</mat-label>
+          <mat-select [ngModel]="form().manager" (ngModelChange)="setField('manager', $event)">
+            <mat-option value="">Select manager…</mat-option>
+            @for (m of MANAGERS; track m) { <mat-option [value]="m">{{ m }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label><mat-icon>location_on</mat-icon> Location</mat-label>
+          <mat-select [ngModel]="form().location" (ngModelChange)="setField('location', $event)">
+            <mat-option value="">Select location…</mat-option>
+            @for (l of LOCATIONS; track l) { <mat-option [value]="l">{{ l }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label><mat-icon>work</mat-icon> Model</mat-label>
+          <mat-select [ngModel]="form().model" (ngModelChange)="setField('model', $event)">
+            <mat-option value="">Select model…</mat-option>
+            @for (m of MODELS; track m) { <mat-option [value]="m">{{ m }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label><mat-icon>work_outline</mat-icon> Role</mat-label>
+          <mat-select [ngModel]="form().role" (ngModelChange)="setField('role', $event)">
+            <mat-option value="">Select role…</mat-option>
+            @for (r of ROLES; track r) { <mat-option [value]="r">{{ r }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button mat-stroked-button (click)="cancel()">
+      <mat-icon>close</mat-icon> Cancel
+    </button>
+    <button mat-flat-button color="primary" (click)="save()">
+      <mat-icon>person_add</mat-icon> {{ saveBtnLabel() }}
+    </button>
+  </div>
+
+</div>

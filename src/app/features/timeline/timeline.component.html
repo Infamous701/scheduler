@@ -1,0 +1,268 @@
+<mat-sidenav-container class="sidenav-container">
+
+  <!-- Filter Drawer -->
+  <mat-sidenav #drawer [mode]="isMobile ? 'over' : 'side'" [opened]="drawerOpen()">
+    <div class="drawer-inner">
+      <div class="drawer-header">
+        <span class="drawer-title">
+          <mat-icon>filter_list</mat-icon> Filters
+          @if (activeFilterCount() > 0) {
+            <span class="badge">{{ activeFilterCount() }}</span>
+          }
+        </span>
+        <button mat-icon-button (click)="toggleDrawer()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>person_outline</mat-icon> Name</mat-label>
+          <input matInput [ngModel]="filters().name" (ngModelChange)="setFilter('name', $event)" placeholder="Search name…">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>badge</mat-icon> ID</mat-label>
+          <input matInput [ngModel]="filters().id" (ngModelChange)="setFilter('id', $event)" placeholder="e.g. 1">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>group</mat-icon> Group</mat-label>
+          <mat-select [ngModel]="filters().group" (ngModelChange)="setFilter('group', $event)">
+            <mat-option value="">All groups</mat-option>
+            @for (g of uniqueGroups(); track g) {
+              <mat-option [value]="g">{{ g }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>location_on</mat-icon> Site</mat-label>
+          <mat-select [ngModel]="filters().site" (ngModelChange)="setFilter('site', $event)">
+            <mat-option value="">All sites</mat-option>
+            @for (s of uniqueSites(); track s) {
+              <mat-option [value]="s">{{ s }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>work</mat-icon> Model</mat-label>
+          <mat-select [ngModel]="filters().model" (ngModelChange)="setFilter('model', $event)">
+            <mat-option value="">All models</mat-option>
+            @for (m of uniqueModels(); track m) {
+              <mat-option [value]="m">{{ m }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>supervisor_account</mat-icon> Role</mat-label>
+          <mat-select [ngModel]="filters().role" (ngModelChange)="setFilter('role', $event)">
+            <mat-option value="">All roles</mat-option>
+            @for (r of uniqueRoles(); track r) {
+              <mat-option [value]="r">{{ r }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>access_time</mat-icon> Shift</mat-label>
+          <mat-select [ngModel]="filters().shift" (ngModelChange)="setFilter('shift', $event)">
+            @for (opt of shiftOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="drawer-footer">
+        <button mat-stroked-button (click)="clearAllFilters()">Clear all filters</button>
+      </div>
+    </div>
+  </mat-sidenav>
+
+  <!-- Main content -->
+  <mat-sidenav-content class="main-content">
+    <div class="page-container">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <div class="header-left">
+          <button mat-icon-button (click)="toggleDrawer()" [class.active]="drawerOpen()">
+            <mat-icon>tune</mat-icon>
+            @if (activeFilterCount() > 0) {
+              <span class="btn-badge">{{ activeFilterCount() }}</span>
+            }
+          </button>
+          <div>
+            <div class="page-title">Timeline</div>
+            <div class="page-subtitle">
+              {{ filteredSchedule().length }} of {{ svc.schedUsers.length }} members
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active filter chips -->
+      <div class="active-filters">
+        @for (chip of activeFilterChips(); track chip.key) {
+          <span class="filter-chip-custom">
+            {{ chip.label }}: <strong>{{ chip.value }}</strong>
+            <button (click)="clearFilter(chip.key as any)"><mat-icon>close</mat-icon></button>
+          </span>
+        }
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        @for (stat of stats(); track stat.label) {
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat-label"><mat-icon>{{ stat.icon }}</mat-icon> {{ stat.label }}</div>
+              <div class="stat-value">{{ stat.value }}</div>
+              <div class="stat-sub">{{ stat.sub }}</div>
+            </mat-card-content>
+          </mat-card>
+        }
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <span class="legend-title">Shifts</span>
+        <div class="legend-item"><div class="swatch sb-d"></div><span style="color:var(--d-tx)">Day</span></div>
+        <div class="legend-item"><div class="swatch sb-n"></div><span style="color:var(--n-tx)">Night</span></div>
+        <div class="legend-item"><div class="swatch sb-r"></div><span style="color:var(--r-tx)">Remote</span></div>
+        <div class="legend-item"><div class="swatch sb-v"></div><span style="color:var(--v-tx)">Virtual</span></div>
+        <div class="legend-item"><div class="swatch sb-p"></div><span style="color:var(--p-tx)">PTO</span></div>
+        <div class="legend-item"><div class="swatch sb-h"></div><span style="color:var(--h-tx)">Holiday</span></div>
+        <div class="legend-item ot-note">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="#ef4444"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+          <span style="color:#8a92a6">= Overtime</span>
+        </div>
+      </div>
+
+      <!-- Week nav -->
+      <div class="week-nav">
+        <div class="week-btns">
+          <button mat-stroked-button (click)="prevWeek()">
+            <mat-icon>chevron_left</mat-icon> Prev
+          </button>
+          <span class="week-label">{{ weekLabel() }}</span>
+          <button mat-stroked-button (click)="nextWeek()">
+            Next <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+        <button mat-flat-button color="primary" (click)="goToday()">
+          <mat-icon>today</mat-icon> Today
+        </button>
+      </div>
+
+      <!-- Timeline grid -->
+      <mat-card class="timeline-card">
+        <mat-card-content class="timeline-content">
+          <div class="tl-scroll">
+            <div class="tl-inner">
+
+              <!-- User column -->
+              <div class="col-users">
+                <div class="col-users-header">Member</div>
+                @for (sched of filteredSchedule(); track sched.user.id) {
+                  <div class="user-row">
+                    <div class="avatar" [style.background]="sched.user.color">
+                      {{ initials(sched.user.name) }}
+                    </div>
+                    <div class="user-info">
+                      <div class="user-name">{{ isMobile ? sched.user.name.split(' ')[0] : sched.user.name }}</div>
+                      <div class="user-role">{{ sched.user.role }}</div>
+                    </div>
+                    <button class="contact-btn" mat-icon-button
+                      (click)="showContact($event, sched.user)"
+                      matTooltip="View contact">
+                      <mat-icon>person_outline</mat-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+
+              <!-- Timeline -->
+              <div class="tl-days">
+                <!-- Day headers -->
+                <div class="day-headers">
+                  @for (day of days(); track day.date.getTime()) {
+                    <div class="day-header"
+                      [class.is-today]="day.isToday"
+                      [class.is-weekend]="day.isWeekend">
+                      <span class="dname">{{ DAY_NAMES[day.date.getDay()] }}</span>
+                      <span class="dnum" [class.today-circle]="day.isToday">{{ day.date.getDate() }}</span>
+                      <span class="dmonth">{{ MONTHS[day.date.getMonth()] }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Hour ticks -->
+                <div class="hour-ticks">
+                  @for (day of days(); track day.date.getTime()) {
+                    <div class="day-ticks">
+                      @for (h of [0,6,12,18]; track h) {
+                        <div class="tick-label" [style.left.px]="h * 8">
+                          {{ h.toString().padStart(2,'0') }}
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <!-- User rows -->
+                @for (sched of filteredSchedule(); track sched.user.id) {
+                  <div class="tl-user-row">
+                    @for (day of sched.days; track day.date.getTime()) {
+                      <div class="day-seg"
+                        [class.is-today]="day.isToday"
+                        [class.is-weekend]="day.isWeekend">
+                        @if (day.shift !== 'off') {
+                          <div class="shift-block"
+                            [ngClass]="getShiftDef(day.shift).cssClass"
+                            [class.all-day]="getShiftDef(day.shift).allDay"
+                            [style.left.px]="shiftLeft(day.shift, 8)"
+                            [style.width.px]="shiftWidth(day.shift, 8)"
+                            [matTooltip]="sched.user.name + ' – ' + getShiftDef(day.shift).label">
+                            <span class="sb-label">{{ getShiftDef(day.shift).label }}</span>
+                            @if (day.isOvertime && day.shift !== 'pto' && day.shift !== 'holiday') {
+                              <span class="ot-badge">
+                                <svg width="8" height="8" viewBox="0 0 24 24" fill="#ef4444">
+                                  <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+                                </svg>
+                              </span>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+            </div>
+          </div>
+        </mat-card-content>
+
+        <mat-divider></mat-divider>
+
+        <div class="tl-footer">
+          <span><mat-icon>schedule</mat-icon> {{ filteredSchedule().length }} of {{ svc.schedUsers.length }} members shown</span>
+          <span><mat-icon>view_week</mat-icon> Week {{ weekNum() }}</span>
+        </div>
+      </mat-card>
+
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+<!-- Contact card popup -->
+<app-contact-card
+  [visible]="contactVisible"
+  [contact]="contactInfo"
+  [anchorRect]="contactAnchor"
+  (close)="contactVisible = false">
+</app-contact-card>

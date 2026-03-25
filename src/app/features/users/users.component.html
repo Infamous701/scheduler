@@ -1,0 +1,215 @@
+<mat-sidenav-container class="sidenav-container">
+
+  <!-- Filter Drawer -->
+  <mat-sidenav #drawer [mode]="'side'" [opened]="drawerOpen()">
+    <div class="drawer-inner">
+      <div class="drawer-header">
+        <span class="drawer-title">
+          <mat-icon>filter_list</mat-icon> Filters
+          @if (activeFilterCount() > 0) {
+            <span class="badge">{{ activeFilterCount() }}</span>
+          }
+        </span>
+        <button mat-icon-button (click)="toggleDrawer()"><mat-icon>close</mat-icon></button>
+      </div>
+
+      <div class="drawer-body">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>person_outline</mat-icon> Name</mat-label>
+          <input matInput [ngModel]="filters().name" (ngModelChange)="setFilter('name',$event)" placeholder="Search name…">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>badge</mat-icon> ID</mat-label>
+          <input matInput [ngModel]="filters().id" (ngModelChange)="setFilter('id',$event)" placeholder="e.g. U-001">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>group</mat-icon> Group</mat-label>
+          <mat-select [ngModel]="filters().group" (ngModelChange)="setFilter('group',$event)">
+            <mat-option value="">All groups</mat-option>
+            @for (g of GROUPS; track g) { <mat-option [value]="g">{{ g }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>location_on</mat-icon> Location</mat-label>
+          <mat-select [ngModel]="filters().location" (ngModelChange)="setFilter('location',$event)">
+            <mat-option value="">All locations</mat-option>
+            @for (l of LOCATIONS; track l) { <mat-option [value]="l">{{ l }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>work</mat-icon> Model</mat-label>
+          <mat-select [ngModel]="filters().model" (ngModelChange)="setFilter('model',$event)">
+            <mat-option value="">All models</mat-option>
+            @for (m of MODELS; track m) { <mat-option [value]="m">{{ m }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>supervisor_account</mat-icon> Role</mat-label>
+          <mat-select [ngModel]="filters().role" (ngModelChange)="setFilter('role',$event)">
+            <mat-option value="">All roles</mat-option>
+            @for (r of ROLES; track r) { <mat-option [value]="r">{{ r }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label><mat-icon>manage_accounts</mat-icon> Manager</mat-label>
+          <mat-select [ngModel]="filters().manager" (ngModelChange)="setFilter('manager',$event)">
+            <mat-option value="">All managers</mat-option>
+            @for (m of MANAGERS; track m) { <mat-option [value]="m">{{ m }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="drawer-footer">
+        <button mat-stroked-button (click)="clearAllFilters()">Clear all filters</button>
+      </div>
+    </div>
+  </mat-sidenav>
+
+  <!-- Main content -->
+  <mat-sidenav-content class="main-content">
+    <div class="page-container">
+
+      <div class="page-header">
+        <div class="header-left">
+          <button mat-icon-button (click)="toggleDrawer()" [class.active]="drawerOpen()">
+            <mat-icon>tune</mat-icon>
+            @if (activeFilterCount() > 0) {
+              <span class="btn-badge">{{ activeFilterCount() }}</span>
+            }
+          </button>
+          <div>
+            <div class="page-title">Users</div>
+            <div class="page-subtitle">
+              {{ svc.allUsers().length }} total · {{ filteredUsers().length }} shown
+            </div>
+          </div>
+        </div>
+        <button mat-flat-button color="primary" (click)="addUser()">
+          <mat-icon>person_add</mat-icon> Add User
+        </button>
+      </div>
+
+      <!-- Active filter chips -->
+      <div class="active-filters">
+        @for (chip of activeFilterChips(); track chip.key) {
+          <span class="filter-chip-custom">
+            {{ chip.label }}: <strong>{{ chip.value }}</strong>
+            <button (click)="clearFilter(chip.key as any)"><mat-icon>close</mat-icon></button>
+          </span>
+        }
+      </div>
+
+      <!-- Table -->
+      <mat-card class="table-card">
+        <mat-card-content>
+          <div class="table-wrap">
+            <table mat-table [dataSource]="pagedUsers()" matSort (matSortChange)="onSort($event)" class="users-table">
+
+              <!-- Name -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+                <td mat-cell *matCellDef="let u">
+                  <div class="user-cell">
+                    <div class="avatar" [style.background]="u.color">{{ initials(u.name) }}</div>
+                    <div class="cell-text">
+                      <button class="name-link" (click)="goToUser(u.id)">{{ u.name }}</button>
+                      <button mat-icon-button class="contact-btn" (click)="showContact($event, u)" matTooltip="Contact">
+                        <mat-icon>person_outline</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- ID -->
+              <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>ID</th>
+                <td mat-cell *matCellDef="let u">
+                  <span class="id-badge">{{ u.id }}</span>
+                </td>
+              </ng-container>
+
+              <!-- Group -->
+              <ng-container matColumnDef="group">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Group</th>
+                <td mat-cell *matCellDef="let u">{{ u.group }}</td>
+              </ng-container>
+
+              <!-- Location -->
+              <ng-container matColumnDef="location">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Location</th>
+                <td mat-cell *matCellDef="let u">
+                  <mat-icon class="loc-icon">location_on</mat-icon>{{ u.location }}
+                </td>
+              </ng-container>
+
+              <!-- Model -->
+              <ng-container matColumnDef="model">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Model</th>
+                <td mat-cell *matCellDef="let u">{{ u.model }}</td>
+              </ng-container>
+
+              <!-- Role -->
+              <ng-container matColumnDef="role">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Role</th>
+                <td mat-cell *matCellDef="let u">
+                  <span class="role-badge"
+                    [style.background]="roleStyle(u.role).bg"
+                    [style.color]="roleStyle(u.role).color">
+                    {{ u.role }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Manager -->
+              <ng-container matColumnDef="manager">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>Manager</th>
+                <td mat-cell *matCellDef="let u">
+                  <div class="manager-cell">
+                    <div class="mgr-avatar" [style.background]="mgrColor(u.manager)">{{ initials(u.manager) }}</div>
+                    <button class="name-link" (click)="goToUser(u.manager)">{{ u.manager }}</button>
+                    <button mat-icon-button class="contact-btn" (click)="showManagerContact($event, u.manager)" matTooltip="Manager contact">
+                      <mat-icon>person_outline</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+                  <mat-icon class="empty-icon">manage_search</mat-icon>
+                  <div>No users match the current filters.</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <mat-paginator
+            [length]="filteredUsers().length"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="[5,10,20,50]"
+            (page)="onPage($event)"
+            showFirstLastButtons>
+          </mat-paginator>
+        </mat-card-content>
+      </mat-card>
+
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+<app-contact-card
+  [visible]="contactVisible"
+  [contact]="contactInfo"
+  [anchorRect]="contactAnchor"
+  (close)="contactVisible = false">
+</app-contact-card>

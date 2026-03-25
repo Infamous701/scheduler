@@ -67,8 +67,12 @@ mat-sidenav {
 }
 
 .contact-btn {
-  width: 22px !important; height: 22px !important; line-height: 22px !important;
-  mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; border-radius: 50%; cursor: pointer; padding: 0;
+  color: var(--muted); transition: background .15s, color .15s;
+  &:hover { background: #eef0fd; color: var(--accent); }
+  mat-icon { font-size: 14px; width: 14px; height: 14px; line-height: 14px; }
 }
 
 .manager-cell {

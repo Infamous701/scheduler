@@ -119,7 +119,7 @@
                     <div class="avatar" [style.background]="u.color">{{ initials(u.name) }}</div>
                     <div class="cell-text">
                       <button class="name-link" (click)="goToUser(u.id)">{{ u.name }}</button>
-                      <button mat-icon-button class="contact-btn" (click)="showContact($event, u)" matTooltip="Contact">
+                      <button class="contact-btn" (click)="showContact($event, u)" matTooltip="Contact">
                         <mat-icon>person_outline</mat-icon>
                       </button>
                     </div>
@@ -174,7 +174,7 @@
                   <div class="manager-cell">
                     <div class="mgr-avatar" [style.background]="mgrColor(u.manager)">{{ initials(u.manager) }}</div>
                     <button class="name-link" (click)="goToManager(u.manager)">{{ u.manager }}</button>
-                    <button mat-icon-button class="contact-btn" (click)="showManagerContact($event, u.manager)" matTooltip="Manager contact">
+                    <button class="contact-btn" (click)="showManagerContact($event, u.manager)" matTooltip="Manager contact">
                       <mat-icon>person_outline</mat-icon>
                     </button>
                   </div>

@@ -85,7 +85,7 @@ export interface ContactInfo {
     .cc-row {
       display: flex; align-items: center; gap: 8px;
       font-size: 11px; overflow: hidden;
-      mat-icon { font-size: 16px; width: 16px; height: 16px; color: #8a92a6; flex-shrink: 0; }
+      mat-icon { font-size: 16px; width: 16px; height: 16px; line-height: 16px; color: #8a92a6; flex-shrink: 0; }
       a { color: #4f63e7; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       a:hover { text-decoration: underline; }
       span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

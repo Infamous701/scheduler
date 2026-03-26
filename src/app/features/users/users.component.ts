@@ -42,7 +42,7 @@ export class UsersComponent {
 
   sortCols = signal<{ col: keyof User; dir: 'asc' | 'desc' }[]>([{ col: 'name', dir: 'asc' }]);
   page       = signal(0);
-  pageSize   = signal(10);
+  pageSize   = signal(25);
 
   readonly GROUPS      = GROUPS;
   readonly LOCATIONS   = LOCATIONS;

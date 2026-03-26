@@ -68,7 +68,7 @@ export class TimelineComponent implements OnDestroy {
   filters    = signal<TimelineFilters>({ ...EMPTY_FILTERS });
   sortDir    = signal<'asc' | 'desc'>('asc');
   page       = signal(0);
-  pageSize   = signal(10);
+  pageSize   = signal(25);
 
   activeFilterCount = computed(() =>
     Object.values(this.filters()).filter(v => v !== '').length

@@ -50,7 +50,6 @@ mat-sidenav {
   width: 100%;
   th.mat-header-cell { background: var(--surf2); font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .5px; white-space: nowrap; }
   td.mat-cell { font-size: 15px; vertical-align: middle; }
-  tr.mat-row:hover { background: var(--surf2); }
 
   .mat-column-name     { width: 20%; min-width: 160px; }
   .mat-column-id       { width: 7%;  min-width: 70px; }
@@ -127,3 +126,7 @@ mat-sidenav {
 }
 
 mat-paginator { border-top: 1px solid var(--border); }
+
+::ng-deep .users-table tr.mat-mdc-row:hover .mat-mdc-cell {
+  background: rgba(79,99,231,0.07) !important;
+}

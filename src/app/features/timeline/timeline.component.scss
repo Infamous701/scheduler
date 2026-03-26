@@ -167,7 +167,7 @@ mat-sidenav {
   );
   &:last-child { border-right: none; }
   &.is-today { background-color: rgba(79,99,231,.04); }
-  &.is-weekend { background-color: #fafbfc; }
+  &.is-weekend { background-color: var(--surf2); }
 }
 
 .ooo-cont {

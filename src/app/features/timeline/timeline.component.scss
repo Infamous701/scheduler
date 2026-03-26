@@ -145,7 +145,8 @@ mat-sidenav {
   display: flex; height: 24px; flex-shrink: 0;
   background: var(--surf2); border-bottom: 1px solid var(--border);
   .day-ticks { flex: 1; min-width: 100px; position: relative; border-right: 1px solid var(--border); }
-  .tick-label { position: absolute; top: 0; font-size: 11px; color: var(--muted); font-family: monospace; transform: translateX(-50%); line-height: 24px; }
+  .tick-mark { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); }
+  .tick-label { position: absolute; top: 0; font-size: 11px; color: var(--muted); font-family: monospace; transform: translateX(-50%); line-height: 24px; z-index: 1; }
 }
 
 .tl-user-row {
@@ -156,9 +157,16 @@ mat-sidenav {
 .day-seg {
   flex: 1; min-width: 100px; height: 100%;
   border-right: 1px solid var(--border); position: relative; overflow: visible;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent,
+    transparent calc(100% / 6 - 1px),
+    var(--border) calc(100% / 6 - 1px),
+    var(--border) calc(100% / 6)
+  );
   &:last-child { border-right: none; }
-  &.is-today { background: rgba(79,99,231,.04); }
-  &.is-weekend { background: #fafbfc; }
+  &.is-today { background-color: rgba(79,99,231,.04); }
+  &.is-weekend { background-color: #fafbfc; }
 }
 
 .ooo-cont {

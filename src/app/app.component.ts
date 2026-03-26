@@ -90,7 +90,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     .app-footer {
       background: #1a1f2e;
       color: rgba(255,255,255,0.6);
-      padding: 20px 10%;
+      padding: 6px 10%;
     }
     .footer-inner {
       display: flex;

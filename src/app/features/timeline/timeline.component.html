@@ -194,10 +194,13 @@
                 <div class="hour-ticks">
                   @for (day of days(); track day.date.getTime()) {
                     <div class="day-ticks">
-                      @for (h of [0,6,12,18]; track h) {
-                        <div class="tick-label" [style.left.%]="(h / 24) * 100">
-                          {{ h.toString().padStart(2,'0') }}
-                        </div>
+                      @for (h of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]; track h) {
+                        <div class="tick-mark" [style.left.%]="(h / 24) * 100"></div>
+                        @if (h % 4 === 0) {
+                          <div class="tick-label" [style.left.%]="(h / 24) * 100">
+                            {{ h.toString().padStart(2,'0') }}
+                          </div>
+                        }
                       }
                     </div>
                   }

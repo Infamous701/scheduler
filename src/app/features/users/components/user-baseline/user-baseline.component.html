@@ -1,0 +1,145 @@
+<div class="ub-page">
+
+  <!-- Back -->
+  <button class="back-btn" (click)="cancel()">
+    <mat-icon>chevron_left</mat-icon> Back to User
+  </button>
+
+  @if (user(); as u) {
+
+    <!-- Header card -->
+    <mat-card class="header-card">
+      <mat-card-content>
+        <div class="hdr-row">
+          <div class="hdr-avatar" [style.background]="avatarColor()">{{ avatarLabel() }}</div>
+          <div class="hdr-info">
+            <div class="hdr-name">{{ u.name }}</div>
+            <div class="hdr-sub">{{ u.role }} &middot; {{ u.group }} &middot; {{ u.location }}</div>
+          </div>
+          <span class="mode-badge">
+            <mat-icon>schedule</mat-icon> Baseline Shifts
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Shift grid -->
+    <mat-card class="section-card">
+      <mat-card-content>
+        <div class="section-title">
+          <mat-icon>date_range</mat-icon> Weekly Shift Pattern
+          <span class="work-days-badge">{{ totalWorkDays() }} work day{{ totalWorkDays() === 1 ? '' : 's' }}</span>
+        </div>
+
+        <div class="shift-grid">
+          @for (day of days; track day) {
+            <div class="shift-row" [class.weekend]="day >= 5">
+              <div class="day-label">
+                <span class="day-name">{{ DAY_LABELS[day] }}</span>
+                <span class="day-type">{{ day < 5 ? 'Weekday' : 'Weekend' }}</span>
+              </div>
+
+              <div class="shift-select-wrap">
+
+                <!-- Type dropdown -->
+                <mat-form-field appearance="outline" class="shift-field">
+                  <mat-label>Shift</mat-label>
+                  <mat-select [ngModel]="entry(day).type" (ngModelChange)="setType(day, $event)">
+                    <mat-select-trigger>
+                      <div class="option-row">
+                        <span class="material-icons opt-icon">{{ SHIFT_ICONS[entry(day).type] }}</span>
+                        {{ SHIFT_DEFS[entry(day).type].label }}
+                      </div>
+                    </mat-select-trigger>
+                    @for (type of SHIFT_TYPES; track type) {
+                      <mat-option [value]="type">
+                        <div class="option-row">
+                          <span class="material-icons opt-icon">{{ SHIFT_ICONS[type] }}</span>
+                          {{ SHIFT_DEFS[type].label }}
+                        </div>
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <!-- Start / End time inputs — only for timed shifts -->
+                @if (isTimed(entry(day).type)) {
+                  <mat-form-field appearance="outline" class="mode-field">
+                    <mat-label>Mode</mat-label>
+                    <mat-select [ngModel]="entry(day).mode" (ngModelChange)="setMode(day, $event)">
+                      <mat-select-trigger>
+                        <div class="option-row">
+                          <span class="material-icons opt-icon">{{ WORK_MODE_ICONS[entry(day).mode!] }}</span>
+                          {{ entry(day).mode | titlecase }}
+                        </div>
+                      </mat-select-trigger>
+                      @for (m of WORK_MODES; track m) {
+                        <mat-option [value]="m">
+                          <div class="option-row">
+                            <span class="material-icons opt-icon">{{ WORK_MODE_ICONS[m] }}</span>
+                            {{ m | titlecase }}
+                          </div>
+                        </mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                }
+
+                @if (isTimed(entry(day).type)) {
+                  <div class="time-group">
+                    <mat-form-field appearance="outline" class="hour-field">
+                      <mat-label>Start</mat-label>
+                      <input matInput type="number" min="0" max="23"
+                        [ngModel]="entry(day).start"
+                        (ngModelChange)="setStart(day, $event)"
+                        placeholder="0–23">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="min-field">
+                      <mat-label>Min</mat-label>
+                      <mat-select [ngModel]="entry(day).startMin" (ngModelChange)="setStartMin(day, $event)">
+                        @for (m of MINUTE_OPTIONS; track m) {
+                          <mat-option [value]="m">{{ m | number:'2.0' }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+
+                  <div class="time-group">
+                    <mat-form-field appearance="outline" class="hour-field">
+                      <mat-label>End</mat-label>
+                      <input matInput type="number" min="0" max="23"
+                        [ngModel]="entry(day).end"
+                        (ngModelChange)="setEnd(day, $event)"
+                        placeholder="0–23">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline" class="min-field">
+                      <mat-label>Min</mat-label>
+                      <mat-select [ngModel]="entry(day).endMin" (ngModelChange)="setEndMin(day, $event)">
+                        @for (m of MINUTE_OPTIONS; track m) {
+                          <mat-option [value]="m">{{ m | number:'2.0' }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                }
+
+              </div>
+            </div>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button mat-stroked-button (click)="cancel()">
+        <mat-icon>close</mat-icon> Cancel
+      </button>
+      <button mat-flat-button color="primary" (click)="save()">
+        <mat-icon>save</mat-icon> Save Baseline
+      </button>
+    </div>
+
+  }
+
+</div>

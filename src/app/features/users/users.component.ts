@@ -51,7 +51,7 @@ export class UsersComponent {
   readonly MANAGERS    = MANAGERS;
   readonly ROLE_COLORS = ROLE_COLORS;
 
-  readonly displayedColumns = ['name','id','group','location','model','role','manager'];
+  readonly displayedColumns = ['name','id','group','location','model','role','manager','actions'];
 
   activeFilterCount = computed(() =>
     Object.values(this.filters()).filter(v => v !== '').length
@@ -144,8 +144,9 @@ export class UsersComponent {
     this.pageSize.set(e.pageSize);
   }
 
-  goToUser(id: string): void { this.router.navigate(['/users', id]); }
-  addUser(): void            { this.router.navigate(['/users/new']); }
+  goToUser(id: string): void   { this.router.navigate(['/users', id], { queryParams: { from: 'Users' } }); }
+  goToShifts(id: string): void { this.router.navigate(['/shifts', id]); }
+  addUser(): void              { this.router.navigate(['/users/new']); }
 
   goToManager(name: string): void {
     const user = this.svc.getUserByName(name);

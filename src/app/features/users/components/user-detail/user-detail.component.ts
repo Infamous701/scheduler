@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, signal } from '@a
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -31,6 +32,7 @@ import { User, GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS } from '../../../../co
 export class UserDetailComponent implements OnInit {
   isNew = true;
   userId: string | null = null;
+  backLabel = 'Back to Users';
 
   form = signal<Partial<User>>({
     id: '', name: '', email: '', phone: '',
@@ -56,11 +58,15 @@ export class UserDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
     public  svc: ScheduleService,
     private snack: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
+    const from = this.route.snapshot.queryParamMap.get('from');
+    if (from) this.backLabel = `Back to ${from}`;
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id && id !== 'new') {
       const user = this.svc.getUserById(id);
@@ -97,7 +103,11 @@ export class UserDetailComponent implements OnInit {
     this.router.navigate(['/users']);
   }
 
+  goToShifts(): void {
+    if (this.userId) this.router.navigate(['/shifts', this.userId]);
+  }
+
   cancel(): void {
-    this.router.navigate(['/users']);
+    this.location.back();
   }
 }

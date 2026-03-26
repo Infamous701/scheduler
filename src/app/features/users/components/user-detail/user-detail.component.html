@@ -2,7 +2,7 @@
 
   <!-- Back -->
   <button class="back-btn" (click)="cancel()">
-    <mat-icon>chevron_left</mat-icon> Back to Users
+    <mat-icon>chevron_left</mat-icon> {{ backLabel }}
   </button>
 
   <!-- Header card -->
@@ -117,6 +117,11 @@
     <button mat-stroked-button (click)="cancel()">
       <mat-icon>close</mat-icon> Cancel
     </button>
+    @if (!isNew) {
+      <button mat-stroked-button (click)="goToShifts()">
+        <mat-icon>schedule</mat-icon> Manage Shifts
+      </button>
+    }
     <button mat-flat-button color="primary" (click)="save()">
       <mat-icon>person_add</mat-icon> {{ saveBtnLabel() }}
     </button>

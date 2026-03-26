@@ -148,6 +148,15 @@ mat-sidenav {
   border-radius: 10px; padding: 0 4px; font-size: 10px; line-height: 1.4;
 }
 
+.mat-column-actions { width: 80px; min-width: 80px; }
+
+.actions-cell {
+  text-align: right;
+  white-space: nowrap;
+  padding-right: 8px !important;
+  vertical-align: middle;
+}
+
 mat-paginator { border-top: 1px solid var(--border); }
 
 ::ng-deep .users-table tr.mat-mdc-row:hover .mat-mdc-cell {

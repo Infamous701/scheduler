@@ -23,5 +23,10 @@ export const routes: Routes = [
     title: 'Edit User – Scheduler',
     loadComponent: () => import('./features/users/components/user-detail/user-detail.component').then(m => m.UserDetailComponent)
   },
+  {
+    path: 'shifts/:userId',
+    title: 'Baseline Shifts – Scheduler',
+    loadComponent: () => import('./features/users/components/user-baseline/user-baseline.component').then(m => m.UserBaselineComponent)
+  },
   { path: '**', redirectTo: 'timeline' }
 ];

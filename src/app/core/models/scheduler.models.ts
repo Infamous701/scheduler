@@ -1,4 +1,4 @@
-export type ShiftType = 'day' | 'night' | 'remote' | 'pto' | 'holiday' | 'virtual' | 'off';
+export type ShiftType = 'day' | 'night' | 'pto' | 'holiday' | 'virtual' | 'off';
 
 export interface ShiftDef {
   start: number;
@@ -13,14 +13,13 @@ export interface ShiftDef {
 export const SHIFT_DEFS: Record<ShiftType, ShiftDef> = {
   day:     { start: 7,  end: 15, overtimeEnd: 17, label: 'DAY',     cssClass: 'sb-d', hours: 8,  allDay: false },
   night:   { start: 21, end: 5,  overtimeEnd: 7,  label: 'NIGHT',   cssClass: 'sb-n', hours: 8,  allDay: false },
-  remote:  { start: 9,  end: 17, overtimeEnd: 19, label: 'REMOTE',  cssClass: 'sb-r', hours: 8,  allDay: false },
   pto:     { start: 0,  end: 24, overtimeEnd: 24, label: 'PTO',     cssClass: 'sb-p', hours: 0,  allDay: true  },
   holiday: { start: 0,  end: 24, overtimeEnd: 24, label: 'HOLIDAY', cssClass: 'sb-h', hours: 0,  allDay: true  },
   virtual: { start: 9,  end: 17, overtimeEnd: 19, label: 'VIRTUAL', cssClass: 'sb-v', hours: 8,  allDay: false },
   off:     { start: 0,  end: 0,  overtimeEnd: 0,  label: 'OFF',     cssClass: '',     hours: 0,  allDay: false  },
 };
 
-export const SHIFT_TYPES: ShiftType[] = ['day', 'night', 'remote', 'pto', 'holiday', 'virtual', 'off'];
+export const SHIFT_TYPES: ShiftType[] = ['day', 'night', 'pto', 'holiday', 'virtual', 'off'];
 
 export interface SchedUser {
   id: number;
@@ -64,6 +63,7 @@ export interface DaySchedule {
   isToday: boolean;
   isWeekend: boolean;
   isLastDay: boolean;
+  nextIsPtoOrHoliday: boolean;
   ooo: OooBlock | null;
 }
 
@@ -126,6 +126,46 @@ export const AVATAR_COLORS = [
   '#1565C0','#6A1B9A','#F57F17','#B71C1C','#00695C',
   '#283593','#AD1457','#2E7D32','#4527A0','#00838F','#558B2F','#E65100'
 ];
+
+// ── Baseline shifts ──────────────────────────────────────────────────────────
+// day-of-week index: 0=Mon … 6=Sun
+export type WorkMode = 'on-site' | 'virtual';
+export const WORK_MODES: WorkMode[] = ['on-site', 'virtual'];
+export const WORK_MODE_ICONS: Record<WorkMode, string> = {
+  'on-site': 'business',
+  'virtual': 'videocam',
+};
+
+export const BASELINE_SHIFT_TYPES: ShiftType[] = ['day', 'night', 'off'];
+
+export interface BaselineDayEntry {
+  type:       ShiftType;
+  mode:       WorkMode | null; // only for day/night
+  start:      number | null;   // hour 0-23, null for allDay/off
+  startMin:   number | null;   // 0, 15, 30, 45
+  end:        number | null;
+  endMin:     number | null;
+}
+
+export const MINUTE_OPTIONS = [0, 15, 30, 45];
+
+export type BaselineWeek = Record<number, BaselineDayEntry>;
+
+export interface UserBaseline {
+  userId: string;
+  shifts: BaselineWeek;
+}
+
+export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+export const SHIFT_ICONS: Record<ShiftType, string> = {
+  day:     'wb_sunny',
+  night:   'nights_stay',
+  pto:     'beach_access',
+  holiday: 'celebration',
+  virtual: 'videocam',
+  off:     'do_not_disturb',
+};
 
 export const ROLE_COLORS: Record<string, { bg: string; color: string }> = {
   'Lead Engineer':      { bg: '#E8F5E9', color: '#1B5E20' },

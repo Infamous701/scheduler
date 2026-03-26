@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, signal, HostListener, inject, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -40,8 +41,9 @@ const EMPTY_FILTERS: TimelineFilters = { name:'', id:'', group:'', location:'', 
   styleUrls: ['./timeline.component.scss']
 })
 export class TimelineComponent implements OnDestroy {
-  private readonly bp = inject(BreakpointObserver);
-  readonly svc = inject(ScheduleService);
+  private readonly bp     = inject(BreakpointObserver);
+  private readonly router = inject(Router);
+  readonly svc            = inject(ScheduleService);
 
   readonly isMobile = toSignal(
     this.bp.observe([Breakpoints.Handset]).pipe(map(r => r.matches)),
@@ -147,12 +149,12 @@ export class TimelineComponent implements OnDestroy {
     const scheds = this.filteredSchedule();
     const total  = scheds.reduce((a, s) => a + s.days.filter(d => d.shift !== 'off').length, 0);
     const onsite = scheds.reduce((a, s) => a + s.days.filter(d => ['day','night'].includes(d.shift)).length, 0);
-    const remote = scheds.reduce((a, s) => a + s.days.filter(d => ['remote','virtual'].includes(d.shift)).length, 0);
+    const remote = scheds.reduce((a, s) => a + s.days.filter(d => d.shift === 'virtual').length, 0);
     const pto    = scheds.reduce((a, s) => a + s.days.filter(d => d.shift === 'pto' || d.shift === 'holiday').length, 0);
     return [
       { label: 'Total Shifts',  value: total,  sub: 'this week',      icon: 'event_note'   },
       { label: 'On-Site',       value: onsite, sub: 'shifts',         icon: 'business'     },
-      { label: 'Remote',        value: remote, sub: 'remote/virtual', icon: 'home_work'    },
+      { label: 'Virtual',       value: remote, sub: 'virtual shifts', icon: 'videocam'     },
       { label: 'PTO / Holiday', value: pto,    sub: 'days',           icon: 'beach_access' },
     ];
   });
@@ -162,10 +164,9 @@ export class TimelineComponent implements OnDestroy {
   readonly MONTHS     = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   readonly shiftOptions = [
     { value:'', label:'All shifts' }, { value:'day', label:'Day' },
-    { value:'night', label:'Night' }, { value:'remote', label:'Remote' },
-    { value:'virtual', label:'Virtual' }, { value:'pto', label:'PTO' },
-    { value:'holiday', label:'Holiday' }, { value:'off', label:'Day Off' },
-    { value:'overtime', label:'Overtime ⚡' },
+    { value:'night', label:'Night' }, { value:'virtual', label:'Virtual' },
+    { value:'pto', label:'PTO' }, { value:'holiday', label:'Holiday' },
+    { value:'off', label:'Day Off' }, { value:'overtime', label:'Overtime ⚡' },
   ];
 
   uniqueGroups     = computed(() => [...new Set(this.svc.allUsers().map(u => u.group))].sort());
@@ -294,6 +295,11 @@ export class TimelineComponent implements OnDestroy {
     });
     this.contactAnchor.set((event.currentTarget as HTMLElement).getBoundingClientRect());
     this.contactVisible.set(true);
+  }
+
+  goToUser(name: string): void {
+    const user = this.svc.getUserByName(name);
+    if (user) this.router.navigate(['/users', user.id], { queryParams: { from: 'Timeline' } });
   }
 
   @HostListener('document:keydown.escape')

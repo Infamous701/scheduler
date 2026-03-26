@@ -1,10 +1,12 @@
 import { Injectable, signal } from '@angular/core';
 import {
   SchedUser, User, ShiftType, SHIFT_TYPES, UserSchedule, OooBlock,
-  GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, AVATAR_COLORS, MANAGER_DATA, SHIFT_DEFS
+  GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, AVATAR_COLORS, MANAGER_DATA, SHIFT_DEFS,
+  UserBaseline, BaselineWeek, BaselineDayEntry
 } from '../models/scheduler.models';
 
-const STORAGE_KEY = 'sched_users';
+const STORAGE_KEY          = 'sched_users';
+const BASELINE_STORAGE_KEY = 'sched_baselines';
 
 @Injectable({ providedIn: 'root' })
 export class ScheduleService {
@@ -64,6 +66,8 @@ export class ScheduleService {
   }
 
   getIsOvertime(uid: number, date: Date): boolean {
+    const shift = this.getShift(uid, date);
+    if (shift === 'pto' || shift === 'holiday' || shift === 'off') return false;
     const s = uid * 53 + date.getFullYear() * 300 + date.getMonth() * 70 + date.getDate() * 11;
     return ((s * 1664525 + 1013904223) & 0x7fffffff) % 4 === 0;
   }
@@ -104,22 +108,50 @@ export class ScheduleService {
         const shift = this.getShift(u.id, date);
         const prevDate = i > 0 ? days[i - 1] : prevSunday;
         const prevShift = this.getShift(u.id, prevDate);
+        const nextDate = this.addDays(date, 1);
+        const nextShift = this.getShift(u.id, nextDate);
+        const nextIsPtoOrHoliday = nextShift === 'pto' || nextShift === 'holiday';
         const prevShiftOvertime = this.getIsOvertime(u.id, prevDate);
         const prevOoo = this.getOoo(u.id, prevDate, prevShift);
         return {
           date,
           shift,
-          prevShift,
+          prevShift: (shift === 'pto' || shift === 'holiday') ? 'off' as ShiftType : prevShift,
           prevShiftOvertime,
-          prevOoo,
+          prevOoo: (shift === 'pto' || shift === 'holiday') ? null : prevOoo,
           isOvertime: this.getIsOvertime(u.id, date),
           isToday: date.getTime() === today.getTime(),
           isWeekend: date.getDay() === 0 || date.getDay() === 6,
           isLastDay: i === days.length - 1,
+          nextIsPtoOrHoliday,
           ooo: this.getOoo(u.id, date, shift),
         };
       })
     }));
+  }
+
+  // ── Baseline shifts ──────────────────────────────────────────────
+  getBaseline(userId: string): BaselineWeek {
+    try {
+      const raw = localStorage.getItem(BASELINE_STORAGE_KEY);
+      if (raw) {
+        const all = JSON.parse(raw) as Record<string, BaselineWeek>;
+        if (all[userId]) return all[userId];
+      }
+    } catch { /* ignore */ }
+    // Default: Mon–Fri day on-site 07:00–15:00, Sat–Sun off
+    const day: BaselineDayEntry = { type: 'day', mode: 'on-site', start: 7, startMin: 0, end: 15, endMin: 0 };
+    const off: BaselineDayEntry = { type: 'off', mode: null,      start: null, startMin: null, end: null, endMin: null };
+    return { 0: day, 1: day, 2: day, 3: day, 4: day, 5: off, 6: off };
+  }
+
+  saveBaseline(userId: string, shifts: BaselineWeek): void {
+    try {
+      const raw = localStorage.getItem(BASELINE_STORAGE_KEY);
+      const all: Record<string, BaselineWeek> = raw ? JSON.parse(raw) : {};
+      all[userId] = shifts;
+      localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(all));
+    } catch { /* ignore */ }
   }
 
   // ── User CRUD ────────────────────────────────────────────────────

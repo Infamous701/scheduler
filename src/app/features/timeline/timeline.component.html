@@ -166,7 +166,7 @@
                       {{ initials(sched.user.name) }}
                     </div>
                     <div class="user-info">
-                      <div class="user-name">{{ isMobile() ? sched.user.name.split(' ')[0] : sched.user.name }}</div>
+                      <button class="user-name-btn" (click)="goToUser(sched.user.name)" matTooltip="View user details">{{ isMobile() ? sched.user.name.split(' ')[0] : sched.user.name }}</button>
                       <div class="user-role">{{ sched.user.role }}</div>
                     </div>
                     <button class="contact-btn"
@@ -221,7 +221,7 @@
                         @if (day.isToday) {
                           <div class="now-line" [style.left.%]="nowPct()" [matTooltip]="nowTime()" matTooltipPosition="above"></div>
                         }
-                        @if (di === 0 && day.prevShift !== 'off' && shiftOverflowsMidnight(day.prevShift, day.prevShiftOvertime)) {
+                        @if (di === 0 && day.prevShift !== 'off' && day.shift !== 'pto' && day.shift !== 'holiday' && shiftOverflowsMidnight(day.prevShift, day.prevShiftOvertime)) {
                           <div class="shift-block shift-cont"
                             [ngClass]="getShiftDef(day.prevShift).cssClass"
                             [style.left.%]="0"
@@ -231,7 +231,7 @@
                             <span class="sb-label">{{ getShiftDef(day.prevShift).label }}</span>
                           </div>
                         }
-                        @if (di === 0 && day.prevOoo && oooOverflowsMidnight(day.prevOoo) && (day.prevShift === 'day' || day.prevShift === 'night')) {
+                        @if (di === 0 && day.prevOoo && oooOverflowsMidnight(day.prevOoo) && (day.prevShift === 'day' || day.prevShift === 'night') && day.shift !== 'pto' && day.shift !== 'holiday') {
                           <div class="ooo-block ooo-cont"
                             [style.left.%]="0"
                             [style.width.%]="oooContinuationWidthPct(day.prevOoo)"
@@ -242,9 +242,9 @@
                           <div class="shift-block"
                             [ngClass]="getShiftDef(day.shift).cssClass"
                             [class.all-day]="getShiftDef(day.shift).allDay"
-                            [class.shift-truncated]="shiftOverflowsMidnight(day.shift, day.isOvertime) && day.isLastDay"
+                            [class.shift-truncated]="shiftOverflowsMidnight(day.shift, day.isOvertime) && (day.isLastDay || day.nextIsPtoOrHoliday)"
                             [style.left.%]="shiftLeftPct(day.shift)"
-                            [style.width.%]="shiftOverflowsMidnight(day.shift, day.isOvertime) && day.isLastDay ? shiftTruncatedWidthPct(day.shift) : shiftWidthPct(day.shift, day.isOvertime)"
+                            [style.width.%]="shiftOverflowsMidnight(day.shift, day.isOvertime) && (day.isLastDay || day.nextIsPtoOrHoliday) ? shiftTruncatedWidthPct(day.shift) : shiftWidthPct(day.shift, day.isOvertime)"
                             [style.z-index]="shiftOverflowsMidnight(day.shift, day.isOvertime) ? 4 : 1"
                             [matTooltip]="shiftTooltip(sched.user.name, day.shift, day.isOvertime)">
                             <span class="sb-label">{{ getShiftDef(day.shift).label }}</span>
@@ -292,7 +292,6 @@
             <span class="legend-title">Shifts</span>
             <div class="legend-item"><div class="swatch sb-d"></div><span style="color:var(--d-tx)">Day</span></div>
             <div class="legend-item"><div class="swatch sb-n"></div><span style="color:var(--n-tx)">Night</span></div>
-            <div class="legend-item"><div class="swatch sb-r"></div><span style="color:var(--r-tx)">Remote</span></div>
             <div class="legend-item"><div class="swatch sb-v"></div><span style="color:var(--v-tx)">Virtual</span></div>
             <div class="legend-item"><div class="swatch sb-p"></div><span style="color:var(--p-tx)">PTO</span></div>
             <div class="legend-item"><div class="swatch sb-h"></div><span style="color:var(--h-tx)">Holiday</span></div>

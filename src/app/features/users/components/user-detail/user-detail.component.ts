@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,6 +15,7 @@ import { ScheduleService } from '../../../../core/services/schedule.service';
 import { User, GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS } from '../../../../core/models/scheduler.models';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-user-detail',
   standalone: true,
   imports: [

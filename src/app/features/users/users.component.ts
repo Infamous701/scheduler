@@ -1,4 +1,4 @@
-import { Component, computed, signal, HostListener } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,6 +21,7 @@ import { initials } from '../../core/utils/user.utils';
 import { User, UserFilters, GROUPS, LOCATIONS, MODELS, ROLES, MANAGERS, ROLE_COLORS, MANAGER_DATA } from '../../core/models/scheduler.models';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-users',
   standalone: true,
   imports: [

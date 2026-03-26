@@ -1,4 +1,4 @@
-import { Component, computed, signal, HostListener, inject, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal, HostListener, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,6 +25,7 @@ import {
 const EMPTY_FILTERS: TimelineFilters = { name:'', id:'', group:'', location:'', model:'', role:'', shift:'' };
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-timeline',
   standalone: true,
   imports: [

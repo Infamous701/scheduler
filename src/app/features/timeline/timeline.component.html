@@ -158,7 +158,10 @@
                   </button>
                 </div>
                 @for (sched of filteredSchedule(); track sched.user.id) {
-                  <div class="user-row">
+                  <div class="user-row"
+                    [class.row-hovered]="hoveredUserId() === sched.user.id"
+                    (mouseenter)="hoveredUserId.set(sched.user.id)"
+                    (mouseleave)="hoveredUserId.set(null)">
                     <div class="avatar" [style.background]="sched.user.color">
                       {{ initials(sched.user.name) }}
                     </div>
@@ -208,7 +211,9 @@
 
                 <!-- User rows -->
                 @for (sched of filteredSchedule(); track sched.user.id) {
-                  <div class="tl-user-row">
+                  <div class="tl-user-row"
+                    (mouseenter)="hoveredUserId.set(sched.user.id)"
+                    (mouseleave)="hoveredUserId.set(null)">
                     @for (day of sched.days; track day.date.getTime(); let di = $index) {
                       <div class="day-seg"
                         [class.is-today]="day.isToday"

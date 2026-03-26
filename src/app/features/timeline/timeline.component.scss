@@ -103,6 +103,7 @@ mat-sidenav {
   border-bottom: 1px solid var(--border);
   &:last-child { border-bottom: none; }
   &:hover { background: var(--surf2); }
+  &.row-hovered { background: rgba(79,99,231,0.15); }
   .avatar {
     width: 28px; height: 28px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;

@@ -173,6 +173,8 @@ export class TimelineComponent implements OnDestroy {
   uniqueModels     = computed(() => [...new Set(this.svc.allUsers().map(u => u.model))].sort());
   uniqueRoles      = computed(() => [...new Set(this.svc.allUsers().map(u => u.role))].sort());
 
+  hoveredUserId = signal<number | null>(null);
+
   // Contact card
   contactVisible = signal(false);
   contactInfo    = signal<ContactInfo | null>(null);
